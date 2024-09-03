@@ -6,7 +6,7 @@ from difflib import SequenceMatcher
 from sklearn.metrics import classification_report
 
 df = pd.read_excel("data/726四分类法.xlsx")
-cloumn = "gpt4"
+cloumn = "qwen"
 
 
 def similarity(sent1, sent2):
@@ -26,6 +26,7 @@ def split_sentences(data):
 
 gpt4o_output = []
 glm4_output = []
+qwen_output = []
 manual_label = []
 for i in tqdm(range(0, len(df))):
     # print(i)
@@ -57,6 +58,16 @@ for i in tqdm(range(0, len(df))):
                     break  # 如果匹配上了，就不要再往下匹配了。
 
         glm4_output.extend(split_data_glm4_output)
+    elif cloumn == 'qwen':
+        qwen = json.loads(df.loc[i, 'qwen_predict'])
+        split_data_qwen_output = split_sentences(qwen)
+        for item in split_data_qwen_output:
+            for sent in split_data_manual:
+                if similarity(item.get("content"), sent.get("content")) > 0.5:
+                    item['label'] = sent.get("type")
+                    item['manual_content'] = sent.get("content")
+                    break
+        qwen_output.extend(split_data_qwen_output)
 
 # 定义一个包含四个必要键值的列表
 required_keys = ['type', 'content', 'label', 'manual_content']
@@ -104,6 +115,25 @@ if cloumn == 'glm4':
     df_cleaned['type'] = df_cleaned['type'].replace("其他", "其它")
     df_cleaned['label'] = df_cleaned['label'].replace("其他", "其它")
     df_cleaned.to_excel("data/glm4_T_4_result.xlsx", index=False)
+    # 计算分类报告
+    classification_rep = classification_report(df_cleaned['label'], df_cleaned['type'], zero_division=0)
+    print(classification_rep)
+
+if cloumn == 'qwen':
+    for item in qwen_output:
+        for key in required_keys:
+            if key not in item:
+                item[key] = ''
+    print(qwen_output)
+    df = pd.DataFrame(qwen_output)
+    print(df)
+    df = df[(df != '').all(axis=1)]
+    print(df)
+    df_cleaned = df.dropna(subset='label').reset_index(drop=True)
+
+    df_cleaned['type'] = df_cleaned['type'].replace("其他", "其它")
+    df_cleaned['label'] = df_cleaned['label'].replace("其他", "其它")
+    df_cleaned.to_excel("data/qwen_T_4_result.xlsx", index=False)
     # 计算分类报告
     classification_rep = classification_report(df_cleaned['label'], df_cleaned['type'], zero_division=0)
     print(classification_rep)
