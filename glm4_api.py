@@ -36,8 +36,8 @@ for i in range(len(df)):
     output_str = response.choices[0].message.content
     # 提取json
     matches = re.findall(r'\[.*\]', output_str, re.DOTALL)
-    df.loc[i,'glm4_api'] = matches[0]
+    df.loc[i,'glm4_predict'] = matches[0]
 
     # output_json = json.loads(matches[0])
 
-df.to_excel("726四分类法.xlsx",index=False)
+df.to_excel("data/726四分类法.xlsx",index=False)

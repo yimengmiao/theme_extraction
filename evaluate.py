@@ -214,7 +214,7 @@ def calculate_metrics(filtered_result):
 
 if __name__ == '__main__':
     # 定义 label 和 predict 列表
-    model = "qwen"
+    model = "qwen_72B"
     df = pd.read_excel("data/726四分类法.xlsx")
     output = []
     for i in tqdm(range(len(df))):
@@ -302,7 +302,7 @@ if __name__ == '__main__':
             filtered_result = filter_results(results)
             output.extend(filtered_result)
         elif model == "qwen_max":
-            predict = json.loads(df.loc[i, 'qwen_72B_predict'])
+            predict = json.loads(df.loc[i, 'qwen_max_predict'])
             # 执行更新后的处理
             results = process_predictions(predict, label)
             print(f"results_no_filter: {results}")
@@ -310,8 +310,8 @@ if __name__ == '__main__':
             filtered_result = filter_results(results)
             output.extend(filtered_result)
 
-        elif model == "qwen_72b":
-            predict = json.loads(df.loc[i, 'qwen_max_predict'])
+        elif model == "qwen_72B":
+            predict = json.loads(df.loc[i, 'qwen_72B_predict'])
             # 执行更新后的处理
             results = process_predictions(predict, label)
             print(f"results_no_filter: {results}")

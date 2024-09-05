@@ -37,5 +37,5 @@ for i in tqdm(range(len(df))):
     output = completion.choices[0].message.model_dump()
     df.loc[i,'qwen_predict'] = output.get("content")
 
-df.to_excel("726四分类法.xlsx",index=False)
+df.to_excel("data/726四分类法.xlsx",index=False)
 

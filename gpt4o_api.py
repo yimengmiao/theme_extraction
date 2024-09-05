@@ -39,10 +39,10 @@ for i in tqdm(range(len(df))):
             ]
         )
         output = response.choices[0].message.content
-        df.loc[i, 'predict'] = output
+        df.loc[i, 'gpt4o_predict'] = output
         logging.info(f"Row {i} processed successfully. Output: {output}")
     except Exception as e:
-        df.loc[i, 'predict'] = "error"
+        df.loc[i, 'gpt4o_predict'] = "error"
         logging.error(f"Error processing row {i}: {e}")
 
 df.to_excel("data/726四分类法.xlsx", index=False)
