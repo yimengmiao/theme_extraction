@@ -235,61 +235,7 @@ if __name__ == '__main__':
     output = []
     for i in tqdm(range(len(df))):
         label = json.loads(df.loc[i, 'label'])
-        # label = [{'type': '发起', 'content': '请袁艺喊“开始上课”，声音要响亮啊。'},
-        #          {'type': '其它', 'content': '同学们好，请坐。'},
-        #          {'type': '评价', 'content': '真棒。'},
-        #          {'type': '讲解', 'content': '昨天呀，我们一起学习了课文八。今天，小猴子呀要到我们班来做客了。'},
-        #          {'type': '发起', 'content': '我们来跟他打打招呼。“猴子”。'},
-        #          {'type': '讲解',
-        #           'content': '昨天在写作业的时候呀，小朋友要注意哦。这个“猴”，反犬旁，旁边是一个单立人，中间有没有一个短竖啊？那么昨天在作业当中，方老师看到有人加了一竖，那就不对了，变成错别字了。明白了吗？'},
-        #          {'type': '发起', 'content': '好，现在用眼睛看，用心记住这个字，“猴子”。'},
-        #          {'type': '讲解', 'content': '哎，每天通过学习啊，我们知道了这个猴子啊，种了一些果树。'},
-        #          {'type': '发起', 'content': '它分别种了什么树呢？谁来说说？于凯，你来说说看。'},
-        #          {'type': '其它', 'content': '你慢讲啊。嗯，'},
-        #          {'type': '发起', 'content': '然后呢？'},
-        #          {'type': '讲解', 'content': '然后种了杏树。'},
-        #          {'type': '发起', 'content': '最后呢？'},
-        #          {'type': '讲解', 'content': '最后还种了桃树。'},
-        #          {'type': '发起', 'content': '到最后怎么样啊？'},
-        #          {'type': '发起', 'content': '好，于凯，你能不能连起来把这句话来说一说？“猴子种了”。'},
-        #          {'type': '评价', 'content': '非常棒，请坐。'},
-        #          {'type': '发起',
-        #           'content': '我们像他一样，用一句话把这个故事，哎，就讲出来了。来，我们一起来试试看。“猴子种了”。'},
-        #          {'type': '评价', 'content': '瞧，咱们一句话就能把故事的意思讲出来了。小朋友们真能干。'},
-        #          {'type': '发起', 'content': '好，那我们来看看哦，他为什么什么都没种成呢？我们来读课文的第一段。来，谁来读？'},
-        #          {'type': '其它', 'content': '那等一下啊。'},
-        #          {'type': '发起', 'content': '好，你来读。“猴子”。'},
-        #          {'type': '发起', 'content': '嗯嗯，你先不要坐下，这个“天天”说明什么呀？'}]
-        #
-        # predict = [{'type': '发起', 'content': '请袁艺喊“开始上课”，声音要响亮啊。'},
-        #            {'type': '其它', 'content': '同学们好，请坐。'},
-        #            {'type': '评价', 'content': '真棒。'},
-        #            {'type': '讲解', 'content': '昨天呀，我们一起学习了课文八。今天，小猴子呀要到我们班来做客了。'},
-        #            {'type': '发起', 'content': '我们来跟他打打招呼。“猴子”。'},
-        #            {'type': '讲解', 'content': '昨天在写作业的时候呀，小朋友要注意哦。'},
-        #            {'type': '讲解', 'content': '这个“猴”，反犬旁，旁边是一个单立人，中间有没有一个短竖啊？'},
-        #            {'type': '讲解', 'content': '那么昨天在作业当中，方老师看到有人加了一竖，那就不对了，变成错别字了。'},
-        #            {'type': '发起', 'content': '明白了吗？'},
-        #            {'type': '发起', 'content': '好，现在用眼睛看，用心记住这个字，“猴子”。'},
-        #            {'type': '讲解', 'content': '哎，每天通过学习啊，我们知道了这个猴子啊，种了一些果树。'},
-        #            {'type': '发起', 'content': '它分别种了什么树呢？谁来说说？'},
-        #            {'type': '发起', 'content': '于凯，你来说说看。'},
-        #            {'type': '其它', 'content': '你慢讲啊。嗯，'},
-        #            {'type': '发起', 'content': '然后呢？'},
-        #            {'type': '讲解', 'content': '然后种了杏树。'},
-        #            {'type': '发起', 'content': '最后呢？'},
-        #            {'type': '讲解', 'content': '最后还种了桃树。'},
-        #            {'type': '发起', 'content': '到最后怎么样啊？'},
-        #            {'type': '发起', 'content': '好，于凯，你能不能连起来把这句话来说一说？“猴子种了”。'},
-        #            {'type': '评价', 'content': '非常棒，请坐。'},
-        #            {'type': '讲解', 'content': '我们像他一样，用一句话把这个故事，哎，就讲出来了。'},
-        #            {'type': '发起', 'content': '来，我们一起来试试看。“猴子种了”。'},
-        #            {'type': '讲解', 'content': '瞧，咱们一句话就能把故事的意思讲出来了。'},
-        #            {'type': '评价', 'content': '小朋友们真能干。'},
-        #            {'type': '发起', 'content': '好，那我们来看看哦，他为什么什么都没种成呢？我们来读课文的第一段。来，谁来读？'},
-        #            {'type': '其它', 'content': '那等一下啊。'},
-        #            {'type': '发起', 'content': '好，你来读。“猴子”。'},
-        #            {'type': '发起', 'content': '嗯嗯，你先不要坐下，这个“天天”说明什么呀？'}]
+
         if model == "gpt4o":
 
             predict = json.loads(df.loc[i, 'gpt4o_predict']).get('result')
@@ -334,12 +280,9 @@ if __name__ == '__main__':
             # 提取过滤结果
             filtered_result = filter_results(results)
             output.extend(filtered_result)
-    # 计算指标
-    filter_output = [item for item in output if item.get("type") in ['发起', '评价']]
-    print(f"{model}预测出的发起和评价的数量: {len(filter_output)}")
-    metrics = calculate_metrics(filter_output)
-    # 输出指标
-    print(metrics)
+
+
+
 
     df = pd.DataFrame(output)
     df2 = pd.DataFrame()
@@ -347,4 +290,27 @@ if __name__ == '__main__':
     df2['label'] = df['matched_type']
     df2['content'] = df['content']
     df2['predict'] = df['type']
-    df2.to_excel(f"{model}_predict.xlsx", index=False)
+    # 计算"发起的"精确率指标
+    df_filter_1 = df2[df2['predict']=='发起']
+    df_filter_2 = df_filter_1[df_filter_1['label']=='发起']
+    print(f"发起的精确率:{len(df_filter_2)/len(df_filter_1)}")
+    # 输出指标
+    # 计算“发起”的召回率指标：
+
+    # 步骤 1：筛选出 label 列等于“发起”的行
+    df_filtered = df2[df2['label'] == '发起']
+
+    # 步骤 2：按 manual_content 分组，并检查相同 manual_content 是否有任何 predict 为“发起”
+    grouped = df_filtered.groupby('manual_content').apply(lambda x: (x['predict'] == '发起').any())
+
+    # 步骤 3：计算召回
+    # 成功召回的 manual_content 数量
+    recall_count = grouped.sum()
+
+    # 去重后的 manual_content 总数
+    total_unique_manual_content = df_filtered['manual_content'].nunique()
+
+    # 步骤 4：计算召回率
+    recall_rate = recall_count / total_unique_manual_content
+    print("“发起”的召回率",recall_rate)
+    df2.to_excel(f"data/{model}_predict.xlsx", index=False)

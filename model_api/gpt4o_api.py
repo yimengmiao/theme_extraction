@@ -6,7 +6,7 @@ from openai import AzureOpenAI
 from tqdm import tqdm
 
 # 配置日志记录
-logging.basicConfig(filename='gpt4o_process.log', level=logging.INFO, encoding="utf-8", filemode='w',
+logging.basicConfig(filename='../gpt4o_process.log', level=logging.INFO, encoding="utf-8", filemode='w',
                     format='%(asctime)s:%(levelname)s:%(message)s')
 prompt = """后面的“待分析文本”是一段师生对话，其中，学生话语已经剔除，只保留老师话语，请对老师的话语进行分析，具体分析方法如下所示：  
 将”待分析文本“分割成”发起“、”评价“、”讲解“、“其它”四种子文本段，”发起“的分割尽可能细一点。“发起”是老师邀请、引导、鼓励学生用话语来回应的语句；“评价”是对学生回应的表扬、认可、批评等评价性话语；”讲解“是老师针对知识展开描述或对学生回应的总结；不能归属于上面三种子文本段，归属为“其它”。
