@@ -94,8 +94,8 @@ def calculate_match_ratio(substring, content):
 # 查找最佳匹配
 def find_best_match(predict_items, labels):
     """
-    在 label 列表中为多个 predict_item 查找最佳匹配的 label 项，并将匹配结果保存到 predict_items 中。
-    返回包含匹配结果的 predict_items 列表。
+    优化后的匹配算法，先进行简单的文本匹配，如果匹配成功，则直接添加结果并跳过公共子串匹配。
+    如果匹配失败，则调用最长公共子串匹配。公共子串匹配只会在 start_index 后的3个 label 中进行。
     """
     start_index = 0  # 初始化从第一个 label 开始
 
@@ -103,39 +103,55 @@ def find_best_match(predict_items, labels):
         best_match = None
         highest_ratio = 0
         best_match_index = -1  # 用于记录匹配的索引
-        print("predict_items:", predict_items)
+
         # 去除标点符号
         predict_content_no_punc = remove_punctuation(predict_item['content'])
 
-        # 只在 start_index 到 start_index + 5 的范围内进行匹配
-        for i in range(start_index, min(start_index + 5, len(labels))):
+        # 先进行快速文本匹配，逐步检查 label 的内容
+        for i in range(start_index, len(labels)):
             label = labels[i]
             label_content_no_punc = remove_punctuation(label['content'])
 
-            # 找到所有公共子串
-            common_substrings = find_all_common_substrings(predict_content_no_punc, label_content_no_punc)
+            # 如果 predict_content_no_punc 完全匹配在 label_content_no_punc 中，直接更新并跳过公共子串匹配
+            if predict_content_no_punc in label_content_no_punc:
+                best_match = label
+                best_match_index = i
+                predict_item['best_match'] = best_match  # 添加匹配结果
+                start_index = best_match_index  # 更新起始索引
+                break  # 结束快速匹配，跳过公共子串匹配
 
-            # 放宽公共子串长度的限制，确保匹配的更宽松
-            valid_substrings = [sub for sub in common_substrings if len(sub) / len(predict_content_no_punc) >= 0.3]
+        # 如果快速匹配没有找到匹配项，进入公共子串匹配阶段
+        if best_match is None:
+            # 公共子串匹配，范围限制在 start_index 到 start_index + 3
+            for i in range(start_index, min(start_index + 3, len(labels))):
+                label = labels[i]
+                label_content_no_punc = remove_punctuation(label['content'])
 
-            # 如果没有符合的子串，跳过这次匹配
-            if not valid_substrings:
-                continue
+                # 找到所有公共子串
+                common_substrings = find_all_common_substrings(predict_content_no_punc, label_content_no_punc)
 
-            # 计算公共子串与目标文本的占比，找出占比最高的
-            for substring in valid_substrings:
-                ratio = calculate_match_ratio(substring, label_content_no_punc)
-                if ratio > highest_ratio:
-                    highest_ratio = ratio
-                    best_match = label
-                    best_match_index = i  # 记录匹配成功的索引
+                # 放宽公共子串长度的限制，确保匹配的更宽松
+                valid_substrings = [sub for sub in common_substrings if len(sub) / len(predict_content_no_punc) >= 0.3]
 
+                # 如果没有符合的子串，跳过这次匹配
+                if not valid_substrings:
+                    continue
+
+                # 计算公共子串与目标文本的占比，找出占比最高的
+                for substring in valid_substrings:
+                    ratio = calculate_match_ratio(substring, label_content_no_punc)
+                    if ratio > highest_ratio:
+                        highest_ratio = ratio
+                        best_match = label
+                        best_match_index = i  # 记录匹配成功的索引
+
+        # 如果没有找到匹配项，标记为 "其它"
         if best_match is None:
             predict_item['best_match'] = {"content": "其它", "type": "其它"}
         else:
             predict_item['best_match'] = best_match
 
-            # 如果匹配的索引更新了，才更新 start_index
+            # 更新 start_index 为匹配成功的索引
             if best_match_index != -1 and best_match_index > start_index:
                 start_index = best_match_index  # 更新起始索引为匹配成功的索引
 
