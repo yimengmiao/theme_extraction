@@ -226,11 +226,19 @@ def calculate_metrics(filtered_result):
         'f1_score': f1,
         'accuracy': accuracy
     }
-
+def highlight_errors(row):
+    if row['label'] == '发起' and row['predict'] != '发起':
+        # 召回计算中的错误，标记为黄色,label列为发起，预测列不是发起
+        return ['background-color: yellow'] * len(row)
+    elif row['predict'] == '发起' and row['label'] != '发起':
+        # 精确率计算中的错误，标记为深绿色，预测列是发起，人工标签列是发起
+        return ['background-color: lightgreen'] * len(row)
+    else:
+        return [''] * len(row)
 
 if __name__ == '__main__':
     # 定义 label 和 predict 列表
-    model = "qwen_72B"
+    model = "qwen_max"
     df = pd.read_excel("data/726四分类法.xlsx")
     output = []
     for i in tqdm(range(len(df))):
@@ -256,7 +264,7 @@ if __name__ == '__main__':
             filtered_result = filter_results(results)
             output.extend(filtered_result)
         elif model == "qwen_long":
-            predict = json.loads(df.loc[i, 'qwen_predict'])
+            predict = json.loads(df.loc[i, 'qwen_long_predict'])
             # 执行更新后的处理
             results = process_predictions(predict, label)
             print(f"results_no_filter: {results}")
@@ -281,7 +289,23 @@ if __name__ == '__main__':
             filtered_result = filter_results(results)
             output.extend(filtered_result)
 
+        elif model == "qwen2-32b":
+            predict = json.loads(df.loc[i, 'qwen1.5-32b_predict'])
+            # 执行更新后的处理
+            results = process_predictions(predict, label)
+            print(f"results_no_filter: {results}")
+            # 提取过滤结果
+            filtered_result = filter_results(results)
+            output.extend(filtered_result)
 
+        elif model == "qwen2-57b":
+            predict = json.loads(df.loc[i, 'qwen2-57b_predict'])
+            # 执行更新后的处理
+            results = process_predictions(predict, label)
+            print(f"results_no_filter: {results}")
+            # 提取过滤结果
+            filtered_result = filter_results(results)
+            output.extend(filtered_result)
 
 
     df = pd.DataFrame(output)
@@ -313,4 +337,6 @@ if __name__ == '__main__':
     # 步骤 4：计算召回率
     recall_rate = recall_count / total_unique_manual_content
     print("“发起”的召回率",recall_rate)
+    # 给预测错误的数据添加上颜色。
+    df2 = df2.style.apply(highlight_errors, axis=1)
     df2.to_excel(f"data/{model}_predict.xlsx", index=False)

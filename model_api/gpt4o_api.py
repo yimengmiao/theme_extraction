@@ -23,7 +23,7 @@ prompt = """后面的“待分析文本”是一段师生对话，其中，学�
 
 client = AzureOpenAI(
     azure_endpoint="https://zonekey-gpt4o.openai.azure.com/",
-    api_key="b01e3eb073fe43629982b30b3548c36e",
+    api_key="b2e709bdd54f4416a734b4a6f8f1c7a0",
     api_version="2024-02-01"
 )
 
