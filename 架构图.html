@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLP 架构图</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .layer {
+            border: 2px solid #333;
+            padding: 20px;
+            margin: 20px;
+            width: 90%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        /* 为不同的层增加背景颜色 */
+        .layer:nth-child(1) {
+            background-color: #f0f9ff;
+        }
+
+        .layer:nth-child(2) {
+            background-color: #e0f7f5;
+        }
+
+        .layer:nth-child(3) {
+            background-color: #fff9e6;
+        }
+
+        .layer-title {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            font-size: 24px;
+            font-weight: bold;
+            color: #444;
+            margin-right: 20px;
+        }
+
+        .component {
+            border: 1px solid #666;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            width: 80%;
+            min-height: 150px; /* 设置最小高度 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .component-content {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 悬停提示（Tooltips） */
+        .component:hover .tooltip {
+            display: block;
+        }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            width: 200px;
+            text-align: center;
+            z-index: 1;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 图标样式增强 */
+        .component strong {
+            font-size: 18px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        /* 模型展示列表 */
+        .model-list {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .model {
+            border: 1px solid #666;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #e6f7ff;
+            margin: 5px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                width: 100%;
+                padding: 10px;
+            }
+
+            .layer {
+                width: 100%;
+            }
+
+            .component {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Evaluation Layer -->
+    <div class="layer">
+        <div class="layer-title">📊 评估层</div>
+        <div class="component">
+            <div class="component-content">
+                <strong>🧮 Evaluator</strong><br>
+                📊 提供分类任务的评估方法<br>
+                📝 文本生成任务的评估（如 BLEU, Rouge）<br>
+                📊 JSON 结构和字段检查<br>
+                📈 扩展性：支持自定义评估标准和指标<br>
+            </div>
+            <div class="tooltip">
+                评估层负责对模型输出进行各种评估，支持分类和生成任务。
+            </div>
+        </div>
+        <div class="component">
+            <div class="component-content">
+                <strong>📊 常见指标</strong><br>
+                🎯 准确率（Accuracy）<br>
+                🎯 精确率（Precision）<br>
+                🎯 召回率（Recall）<br>
+                🎯 F1 分数
+            </div>
+            <div class="tooltip">
+                使用常见的分类任务指标评估模型性能。
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Processing Layer -->
+    <div class="layer">
+        <div class="layer-title">📊 数据处理层</div>
+        <div class="component">
+            <div class="component-content">
+                <strong>💻 DataProcessor(根据Task不同进行不同的处理)</strong><br>
+                📑 支持从不同数据结构（如 DataFrame、CSV）中提取数据<br>
+                ✏️ 可扩展性：支持数据预处理（如文本清理、规范化）<br>
+                📦 处理结果可以动态存储到不同数据格式（如新增列或导出文件）
+            </div>
+            <div class="tooltip">
+                数据处理层负责从不同数据源中提取和处理文本数据。
+            </div>
+        </div>
+        <div class="component">
+            <div class="component-content">
+                <strong>⚙️ 自定义操作</strong><br>
+                ✂️ 支持用户自定义列操作<br>
+                🔍 自动提取和处理文本数据
+            </div>
+            <div class="tooltip">
+                用户可以根据需求自定义数据处理步骤。
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Layer -->
+    <div class="layer">
+        <div class="layer-title">🧠 模型层</div>
+        <div class="component">
+            <div class="component-content">
+                <strong>🎯 ModelAPI</strong><br>
+                🔗 封装模型 API 调用<br>
+                ⚙️ 动态配置（如模型名称、API 版本）<br>
+                🛠 统一接口：`analyze_text`
+            </div>
+            <div class="tooltip">
+                模型层负责通过API与不同的NLP模型进行通信。
+            </div>
+        </div>
+        <div class="component">
+            <div class="component-content">
+                <strong>支持的模型</strong><br>
+                <div class="model-list">
+                    <div class="model">🔹 GPT4o</div>
+                    <div class="model">🔹 Qwen</div>
+                    <div class="model">🔹 GLM4</div>
+                </div>
+            </div>
+            <div class="tooltip">
+                支持多种闭源大模型的调用，支持更多模型扩展。
+            </div>
+        </div>
+        <div class="component">
+            <div class="component-content">
+                <strong>📈 扩展性</strong><br>
+                ➕ 可支持更多闭源和开源模型<br>
+                🔧 灵活配置 API 端点和参数
+            </div>
+            <div class="tooltip">
+                模型层可以灵活支持新模型的扩展，配置API端点。
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

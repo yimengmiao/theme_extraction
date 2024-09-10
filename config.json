@@ -1,6 +1,11 @@
-{
-  "system_prompt": "",
-  "user_prompt": "",
-  "task": "T_4",
-  "data": [{"start_time":"","end_time":"","text": ""},{"start_time":"","end_time":"","text":"" }{"start_time":"","end_time":"","text":"" }]
+{"model_paramerters": {
+"model_family": "gpt4o",
+"api_key": "your_api_key",
+"base_prompt": "后面的“待分析文本”是一段师生对话...",
+"model_name": "soikit_test",
+"api_version": "2024-02-01"
+},
+"Task": "",
+"data":[],
+"T": ""
 }

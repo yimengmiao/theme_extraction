@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Evaluation Layer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/8.8.4/mermaid.min.js"></script>
+    <style>
+        .centered {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .bold-title {
+            font-weight: bold;
+            font-size: 1.4em;
+            text-align: left;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="centered">
+        <div class="bold-title">模型效果评估层</div>
+        <div class="mermaid">
+            graph TD
+            %% 模型效果评估层
+            A[输入 Task 和 last_json_output] --> B[调用 evaluate.py]
+            B --> |Task1| C1[选择 Task1 评估分支]
+            B --> |Task2| C2[选择 Task2 评估分支]
+
+            %% 处理 Task1 的评估
+            C1 --> D1[处理 Task1 的评估逻辑]
+            D1 --> E1[输出 Task1 评估指标]
+
+            %% 处理 Task2 的评估
+            C2 --> D2[处理 Task2 的评估逻辑]
+            D2 --> E2[输出 Task2 评估指标]
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+</html>
