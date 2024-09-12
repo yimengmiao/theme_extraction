@@ -49,25 +49,36 @@ class ModelAPI:
 
 if __name__ == '__main__':
     # 示例调用
-    api_key = "your_api_key"
+    api_key = "sk-f582e4fab0894a52b12b7a85c62868bc"
     text_to_analyze = "它分别种了什么树呢？谁来说说？于凯，你来说说看。你慢讲啊。嗯，然后呢？"
     base_prompt = """后面的“待分析文本”是一段师生对话，其中，学生话语已经剔除，只保留老师话语，请对老师的话语进行分析，具体分析方法如下所示：  
 将”待分析文本“分割成”发起“、”评价“、”讲解“、“其它”四种子文本段，”发起“的分割尽可能细一点。“发起”是老师邀请、引导、鼓励学生用话语来回应的语句；“评价”是对学生回应的表扬、认可、批评等评价性话语；”讲解“是老师针对知识展开描述或对学生回应的总结；不能归属于上面三种子文本段，归属为“其它”。
-按照下面“示例”输出： """
+按照下面“示例”输出： 
+{"result":
+[{"type":"发起"，"content":"它分别种了什么树呢？于凯，你来说说看。"}, 
+{"type":"其它"："content":"你慢讲啊，嗯。"},
+{"type":"发起"："content":"然后呢？"},
+{"type":"讲解"："content":"然后种了杏树。"},
+{"type":"发起"："content":"最后呢？"}
+]}
+"""
     # 调用GPT4o模型
 
     # 调用GPT4o模型，传入deployment_name而不是gpt4o
     # gpt4o_model = ModelAPI(model_family="gpt4o", api_key="b2e709bdd54f4416a734b4a6f8f1c7a0",
     #                        api_version="2024-02-01")
     # gpt4o_result = gpt4o_model.analyze_text(text=text_to_analyze, base_prompt=base_prompt, model="soikit_test")
+    # print("type(gpt4o_result)=", type(gpt4o_result))
     # print("gpt4o_result:", gpt4o_result)
-    #
+
     # # 调用GLM-4模型
-    # glm4_model = ModelAPI(model_family="glm-4", api_key="08bd304ed5c588b2c9cb534405241f0e.jPN6gjmvlBe2q1ZZ")
-    # glm4_result = glm4_model.analyze_text(text=text_to_analyze, base_prompt=base_prompt,model='glm-4')
-    # print("glm4_result:", glm4_result)
+    glm4_model = ModelAPI(model_family="glm-4", api_key="08bd304ed5c588b2c9cb534405241f0e.jPN6gjmvlBe2q1ZZ")
+    glm4_result = glm4_model.analyze_text(text=text_to_analyze, base_prompt=base_prompt,model='glm-4-flash')
+    print("type(glm4_result)=", type(glm4_result))
+    print("glm4_result:", glm4_result)
 
     # # 调用Qwen-Long模型
-    qwen_long_model = ModelAPI(model_family="qwen", api_key="sk-f582e4fab0894a52b12b7a85c62868bc")
-    qwen_long_result = qwen_long_model.analyze_text(text=text_to_analyze, base_prompt=base_prompt,model="qwen2-72b-instruct")
-    print("qwen_long_result:", qwen_long_result)
+    # qwen_long_model = ModelAPI(model_family="qwen", api_key=api_key)
+    # qwen_long_result = qwen_long_model.analyze_text(text=text_to_analyze, base_prompt=base_prompt,
+    #                                                 model="qwen2-72b-instruct")
+    # print("qwen_long_result:", qwen_long_result)

@@ -26,32 +26,35 @@
         <div class="mermaid">
             graph TD
             %% 数据处理层部分
-            A[输入Data] --> |调用DataProcessor类| B[检查sub_task和T参数]
-            B --> |Task1| C1[处理Task1数据]
-            B --> |Task2| C2[处理Task2数据]
-            C1 --> D1[生成Task1的json_output]
-            C2 --> D2[生成Task2的json_output]
+            A[入参] --> |调用DataProcessor类| B[检查sub_task和T参数]
+            B --> C{检测Task任务} %% 新增菱形判断框
+
+            %% 分支根据Task的不同而选择
+            C --> |Task1| D1[处理Task1数据]
+            C --> |Task2| D2[处理Task2数据]
+            D1 --> E1[生成Task1的json_output]
+            D2 --> E2[生成Task2的json_output]
 
             %% 模型调用层部分
-            D1 --> |json_output处理后| E1[选择模型接口 for Task1]
-            D2 --> |json_output处理后| E2[选择模型接口 for Task2]
+            E1 --> |json_output处理后| F1[根据model_parameters参数选择模型接口 for Task1]
+            E2 --> |json_output处理后| F2[根据model_parameters参数选择模型接口 for Task2]
 
-            E1 --> F1[选择模型]
-            F1 --> |GPT-4o| G1[Task1: GPT-4o模型处理]
-            F1 --> |Qwen| G2[Task1: Qwen模型处理]
-            F1 --> |GLM4| G3[Task1: GLM4模型处理]
+            F1 --> G1[选择模型]
+            G1 --> |GPT-4o| H1[Task1: GPT-4o模型处理]
+            G1 --> |Qwen| H2[Task1: Qwen模型处理]
+            G1 --> |GLM4| H3[Task1: GLM4模型处理]
 
-            E2 --> F2[选择模型]
-            F2 --> |GPT-4o| G4[Task2: GPT-4o模型处理]
-            F2 --> |Qwen| G5[Task2: Qwen模型处理]
-            F2 --> |GLM4| G6[Task2: GLM4模型处理]
+            F2 --> G2[选择模型]
+            G2 --> |GPT-4o| H4[Task2: GPT-4o模型处理]
+            G2 --> |Qwen| H5[Task2: Qwen模型处理]
+            G2 --> |GLM4| H6[Task2: GLM4模型处理]
 
-            G1 --> H[返回Task1的last_json_output]
-            G2 --> H
-            G3 --> H
-            G4 --> I[返回Task2的last_json_output]
-            G5 --> I
-            G6 --> I
+            H1 --> I[返回Task1的last_json_output]
+            H2 --> I
+            H3 --> I
+            H4 --> J[返回Task2的last_json_output]
+            H5 --> J
+            H6 --> J
         </div>
     </div>
 
