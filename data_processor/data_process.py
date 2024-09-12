@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 
+
 class DataProcessorFixed:
     def __init__(self, dataset, task, T):
         """
@@ -46,52 +47,32 @@ class DataProcessorFixed:
         else:
             raise ValueError("No label=0 rows found in the dataset")
 
-    def split_data(self):
-        """
-        根据任务类型进行数据分割。针对label为0的行，按时间差T进行分割。
+    def split_dataset(self):
+        # 初始化
+        df = self.dataset
 
-        :return: 分割后的子数据集列表，每个子数据集是一个DataFrame
-        """
-        dataset = self.dataset
-        sub_dfs = []
-        current_start = 0
+        last_teacher_end_time = df.iloc[0]['end_time']  # 第一个教师话语的 end_time 作为初始时间
+        current_start = 0  # 当前分割的起始点
+        sub_datasets = []  # 存储子数据集
 
-        while current_start < len(dataset):
-            ref_end_time = dataset.loc[current_start, 'end_time']
-            for i in range(current_start + 1, len(dataset)):
-                if dataset.loc[i, 'label'] == 0:
-                    time_gap = dataset.loc[i, 'start_time'] - ref_end_time
-                    if time_gap > self.T:
-                        sub_dfs.append(dataset.iloc[current_start:i].copy())
-                        current_start = i
-                        break
-                    else:
-                        ref_end_time = dataset.loc[i, 'end_time']
-            else:
-                sub_dfs.append(dataset.iloc[current_start:].copy())
-                break
+        for i in range(1, len(df)):
+            if df.iloc[i]['label'] == 0:  # 遇到教师话语
+                time_interval = df.iloc[i]['start_time'] - last_teacher_end_time  # 计算时间间隔
 
-        return sub_dfs
+                # 检查是否需要分割
+                if time_interval > self.T or any(df.iloc[j]['label'] == 1 for j in range(current_start, i)):
+                    # 触发分割
+                    sub_datasets.append(df.iloc[current_start:i])  # 将current_start到i-1的记录作为子数据集
+                    current_start = i  # 更新分割起点为当前教师话语的索引
 
-    def process_sub_dfs(self, sub_dfs):
-        """
-        对sub_dfs中的每个sub_df进行处理，处理label为1的行出现在label为0的行之前的情况，并进行合并和特殊处理
-        """
-        for idx in range(1, len(sub_dfs)):
-            sub_df = sub_dfs[idx]
-            list1 = []
+                # 更新last_teacher_end_time为当前教师话语的end_time
+                last_teacher_end_time = df.iloc[i]['end_time']
 
-            for i in range(len(sub_df)):
-                if sub_df.iloc[i]['label'] != 0:
-                    list1.append(i)
-                else:
-                    break
+        # 如果遍历结束后仍有数据未分割，处理最后一个子数据集
+        if current_start < len(df):
+            sub_datasets.append(df.iloc[current_start:])
 
-            if list1:
-                sub_dfs[idx - 1] = pd.concat([sub_dfs[idx - 1], sub_df.loc[list1]]).reset_index(drop=True)
-                sub_dfs[idx] = sub_df.drop(list1).reset_index(drop=True)
-
-        return sub_dfs
+        return sub_datasets
 
     def merge_text_by_label(self, sub_df):
         """
@@ -142,20 +123,19 @@ class DataProcessorFixed:
         """
         针对"teacher_dialogue_classification"任务的处理逻辑
         """
-        # 丢弃第一个label为0之前的学生话语
+        # 丢弃第一个老师话语（label为0）之前的学生话语
         self.discard_student_before_first_teacher()
 
         # 分割数据
-        sub_dfs = self.split_data()
-
-        # 处理label为1的行出现在label为0之前的情况
-        sub_dfs = self.process_sub_dfs(sub_dfs)
+        sub_dfs = self.split_dataset()
+        for item in sub_dfs:
+            print(item)
 
         json_list = []
         for sub_df in sub_dfs:
             processed_sub_df = self.merge_text_by_label(sub_df)
             json_list.append(processed_sub_df.to_json(orient='records', force_ascii=False))
-
+        json_list = [json.loads(item) for item in json_list]
         return json_list
 
     def process_class_activity_classification(self):
@@ -175,8 +155,8 @@ class DataProcessorFixed:
 
 # 示例数据
 data = {
-    'start_time': [27300, 35310, 40560, 45590, 47910, 50070, 54340, 67170],
-    'end_time': [32940, 39510, 42710, 47190, 49590, 52760, 64670, 69880],
+    'start_time': [27300, 35310, 40560, 45590, 47910, 50070, 52780, 53000],
+    'end_time': [32940, 39510, 42710, 47190, 49590, 52760, 52790, 69880],
     'text': [
         "具你，为什么要我买？这是第一套。",
         "喂，你，吃你吃你狗，你，",
@@ -187,7 +167,7 @@ data = {
         "没有，50。我现在这个阳猫世，",
         "我看谁今天的坐姿有问题啊啊，"
     ],
-    'label': [0, 0, 1, 0, 0, 0, 1, 0]
+    'label': [1, 1, 1, 0, 1, 0, 1, 0]
 }
 df = pd.DataFrame(data)
 
@@ -195,7 +175,7 @@ df = pd.DataFrame(data)
 processor = DataProcessorFixed(
     dataset=df,
     task="teacher_dialogue_classification",  # 更改任务为"class_activity_classification"
-    T=800
+    T=500
 )
 
 # 处理数据
