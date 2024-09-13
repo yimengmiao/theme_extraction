@@ -120,7 +120,6 @@ def process_data_and_analyze(params):
         print("result", result)
 
         item.append({f"{model_name}_result": result})
-        break
 
     return output
 

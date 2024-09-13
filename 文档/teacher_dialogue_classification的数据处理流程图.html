@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数据流程图</title>
+    <title>参数分支处理树形图</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -30,15 +30,35 @@
             transform: rotate(-45deg);
             margin-bottom: 10px;
         }
+        .branch {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
         .note {
             font-size: 14px;
             color: #888;
+        }
+        .error {
+            color: red;
+        }
+        .line {
+            width: 2px;
+            height: 30px;
+            background-color: black;
+            margin: 10px auto;
+        }
+        .horizontal-line {
+            width: 100px;
+            height: 2px;
+            background-color: black;
+            margin: 0 auto;
         }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: center;">数据处理和模型调用流程图</h2>
+    <h2 style="text-align: center;">参数分支处理树形图</h2>
 
     <div class="flowchart">
         <!-- Start -->
@@ -53,34 +73,88 @@
 
         <!-- Validate Input -->
         <div class="step">
-            <strong>参数校验</strong>
+            <strong>校验 data_processor</strong>
             <div class="note">
-                检查 <strong>data_processor</strong>, <strong>data</strong> 是否包含必须的键，且 <strong>data</strong> 中的键值为列表类型。
+                检查 <strong>data_processor</strong> 是否存在，且包含 Task
+            </div>
+        </div>
+
+        <div class="branch">
+            <div>
+                <!-- Error if data_processor is missing -->
+                <div class="horizontal-line"></div>
+                <div class="step error">
+                    <strong>错误</strong>
+                    <div class="note">data_processor 缺失</div>
+                </div>
+            </div>
+            <div>
+                <div class="horizontal-line"></div>
+                <!-- Continue if data_processor is valid -->
+                <div class="step">
+                    <strong>校验 data</strong>
+                    <div class="note">
+                        检查 <strong>data</strong> 是否包含 start_time, end_time, text, label，并且每个键对应的值为列表
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="branch">
+            <div>
+                <!-- Error if data is invalid -->
+                <div class="horizontal-line"></div>
+                <div class="step error">
+                    <strong>错误</strong>
+                    <div class="note">
+                        data 缺失或数据格式不正确
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="horizontal-line"></div>
+                <!-- Continue if data is valid -->
+                <div class="step">
+                    <strong>数据处理</strong>
+                    <div class="note">
+                        使用 <strong>DataProcessor</strong> 处理数据
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="arrow"></div>
 
-        <!-- Data Preprocessing -->
+        <!-- Check if model_parameters exists -->
         <div class="step">
-            <strong>数据处理</strong>
+            <strong>校验 model_parameters</strong>
             <div class="note">
-                使用 <strong>DataProcessor</strong> 对 <strong>data</strong> 进行处理。<br>
-                <strong>参数：</strong><br>
-                task: data_processor['Task']<br>
-                T: data_processor['T']
+                检查 <strong>model_parameters</strong> 是否存在
             </div>
         </div>
 
-        <div class="arrow"></div>
-
-        <!-- Model Calling -->
-        <div class="step">
-            <strong>模型调用</strong>
-            <div class="note">
-                如果存在 <strong>model_parameters</strong>，则调用模型。<br>
-                <strong>参数：</strong><br>
-                model_family, api_key, model_name, api_version, prompt
+        <div class="branch">
+            <div>
+                <!-- If model_parameters is missing -->
+                <div class="horizontal-line"></div>
+                <div class="step">
+                    <strong>输出结果</strong>
+                    <div class="note">
+                        仅输出数据处理结果（不调用模型）
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="horizontal-line"></div>
+                <!-- If model_parameters exists -->
+                <div class="step">
+                    <strong>模型调用</strong>
+                    <div class="note">
+                        调用模型进行分析<br>
+                        使用 model_parameters 中的参数：
+                        model_family, api_key, model_name, api_version, prompt
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -90,7 +164,7 @@
         <div class="step">
             <strong>输出结果</strong>
             <div class="note">
-                输出经过模型分析的结果，包含处理过的 <strong>teacher_text</strong> 和 <strong>student_text</strong>。
+                输出经过模型分析的结果，包含 teacher_text 和 student_text。
             </div>
         </div>
     </div>
