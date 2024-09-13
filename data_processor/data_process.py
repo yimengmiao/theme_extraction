@@ -50,12 +50,36 @@ class TeacherDialogueClassificationProcessor:
 
         return sub_datasets
 
+    def convert_punctuation_to_chinese(self, text):
+        """
+        将英文标点符号转换为中文标点符号
+        """
+        punctuations = {
+            ',': '，',
+            '.': '。',
+            '?': '？',
+            '!': '！',
+            ':': '：',
+            ';': '；',
+            '"': '“',
+            '\'': '‘',
+            '(': '（',
+            ')': '）',
+            '[': '【',
+            ']': '】'
+        }
+
+        for eng_punc, zh_punc in punctuations.items():
+            text = text.replace(eng_punc, zh_punc)
+
+        return text
+
     def merge_text_by_label(self, sub_df):
         """
         按相同的label合并文本，并处理特殊情况
         """
         merged_rows = []
-        current_text = sub_df.iloc[0]['text']
+        current_text = self.convert_punctuation_to_chinese(sub_df.iloc[0]['text'])  # 转换标点符号
         current_start_time = sub_df.iloc[0]['start_time']
         current_end_time = sub_df.iloc[0]['end_time']
         current_label = sub_df.iloc[0]['label']
@@ -160,7 +184,6 @@ class DataProcessor:
 
 
 if __name__ == '__main__':
-
     # 示例数据
     data = {
         'start_time': [27300, 35310, 40560, 45590, 47910, 50070, 52780, 53000],
