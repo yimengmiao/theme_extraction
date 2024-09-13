@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据流程图</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .flowchart {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .step {
+            width: 250px;
+            padding: 15px;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            text-align: center;
+            margin: 10px;
+        }
+        .arrow {
+            width: 50px;
+            height: 50px;
+            border-left: 3px solid black;
+            border-bottom: 3px solid black;
+            transform: rotate(-45deg);
+            margin-bottom: 10px;
+        }
+        .note {
+            font-size: 14px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align: center;">数据处理和模型调用流程图</h2>
+
+    <div class="flowchart">
+        <!-- Start -->
+        <div class="step">
+            <strong>输入参数</strong>
+            <div class="note">
+                model_parameters, data, data_processor
+            </div>
+        </div>
+
+        <div class="arrow"></div>
+
+        <!-- Validate Input -->
+        <div class="step">
+            <strong>参数校验</strong>
+            <div class="note">
+                检查 <strong>data_processor</strong>, <strong>data</strong> 是否包含必须的键，且 <strong>data</strong> 中的键值为列表类型。
+            </div>
+        </div>
+
+        <div class="arrow"></div>
+
+        <!-- Data Preprocessing -->
+        <div class="step">
+            <strong>数据处理</strong>
+            <div class="note">
+                使用 <strong>DataProcessor</strong> 对 <strong>data</strong> 进行处理。<br>
+                <strong>参数：</strong><br>
+                task: data_processor['Task']<br>
+                T: data_processor['T']
+            </div>
+        </div>
+
+        <div class="arrow"></div>
+
+        <!-- Model Calling -->
+        <div class="step">
+            <strong>模型调用</strong>
+            <div class="note">
+                如果存在 <strong>model_parameters</strong>，则调用模型。<br>
+                <strong>参数：</strong><br>
+                model_family, api_key, model_name, api_version, prompt
+            </div>
+        </div>
+
+        <div class="arrow"></div>
+
+        <!-- Output -->
+        <div class="step">
+            <strong>输出结果</strong>
+            <div class="note">
+                输出经过模型分析的结果，包含处理过的 <strong>teacher_text</strong> 和 <strong>student_text</strong>。
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
