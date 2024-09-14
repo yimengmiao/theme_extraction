@@ -1,5 +1,67 @@
+# 教师对话分类处理器
 
-# 数据分割（split_data）函数说明
+## 项目简介
+
+`TeacherDialogueClassificationProcessor` 是一个用于处理课堂音频转译文本的工具。其主要任务是将课堂上老师和学生的对话片段自动分割并整理成独立的师生对话文本段。这个工具可以应用于课堂互动分析以及其他教育相关的自然语言处理任务。
+
+## 功能说明
+
+本项目的主要功能包括：
+
+1. **去除无效学生发言**: 移除在第一个老师发言之前的所有学生发言记录。
+2. **数据集分割**: 根据发言者标签（老师或学生）和时间差，将转译文本数据集划分为独立的对话段。
+3. **标点符号转换**: 将文本中的英文标点符号转换为对应的中文标点符号，确保文本格式统一。
+4. **合并文本段**: 按照标签合并连续的同一角色（老师或学生）的发言。
+5. **生成师生对话段**: 将处理后的数据构建为可以用于进一步分析的师生对话文本段。
+
+## 主要方法
+
+- `__init__(self, dataset, T)`  
+  初始化处理器，接收一个包含转译文本的数据集和时间差阈值 `T`。
+  
+- `discard_student_before_first_teacher(self)`  
+  去除第一个老师发言之前的所有学生发言记录。
+  
+- `split_dataset(self)`  
+  根据时间差和发言者标签，分割数据集为独立的师生对话段。
+  
+- `convert_punctuation_to_chinese(self, text)`  
+  将文本中的英文标点符号转换为中文标点符号。
+  
+- `merge_text_by_label(self, sub_df)`  
+  合并相同标签的文本，并处理特殊情况。
+  
+- `process(self)`  
+  处理数据集，生成独立的师生对话段文本。
+
+## 使用示例
+
+```python
+# 假设我们有一个数据集 df 和时间阈值 T
+processor = TeacherDialogueClassificationProcessor(df, T=5)
+dialogue_segments = processor.process()
+
+for segment in dialogue_segments:
+    print(segment)
+```
+
+## 数据要求
+
+输入数据集应为 Pandas DataFrame 格式，并包含以下字段：
+
+- `start_time`：发言的开始时间
+- `end_time`：发言的结束时间
+- `text`：转译的文本内容
+- `label`：发言者的标签，`0` 表示老师，`1` 表示学生
+
+## 注意事项
+
+- 数据集中必须包含至少一个标签为老师（`label == 0`）的记录，否则程序会抛出异常。
+- 时间差阈值 `T` 的设置需根据实际应用场景调整，以确保合理的对话段划分。
+
+
+
+# 特别对数据分割（split_dataset）函数说明
 
 ## 功能概述
 
