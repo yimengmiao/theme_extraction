@@ -45,8 +45,9 @@ class Evaluator:
 
 # 使用Evaluator类进行评估示例
 if __name__ == '__main__':
-    model = "qwen_long"
-    df = pd.read_excel("../data/726四分类法.xlsx")
+    model = "qwen_72B"
+    task = "test_model_ability"
+    df = pd.read_excel(f"../data/{task}/726四分类法.xlsx")
 
-    evaluator = Evaluator(task="teacher_dialogue_classification_old", model=model, df=df)
+    evaluator = Evaluator(task=task, model=model, df=df)
     evaluator.evaluate()

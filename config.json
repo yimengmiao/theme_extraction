@@ -1,55 +1,12 @@
 {
-  "model_paramerters": {
-    "model_family": "gpt4o",
-    "api_key": "your_api_key",
-    "prompt": "后面的“待分析文本”是一段师生对话...",
+  "model_parameters": {
+    "model_family": "qwen",
+    "api_key": "b2e709bdd54f4416a734b4a6f8f1c7a0",
     "model_name": "soikit_test",
     "api_version": "2024-02-01"
   },
-  "data": {
-    "start_time": [
-      27300,
-      35310,
-      40560,
-      45590,
-      47910,
-      50070,
-      52780,
-      53000
-    ],
-    "end_time": [
-      32940,
-      39510,
-      42710,
-      47190,
-      49590,
-      52760,
-      52790,
-      69880
-    ],
-    "text": [
-      "具你，为什么要我买？这是第一套。",
-      "喂，你，吃你吃你狗，你，",
-      "好，把语文书翻到第50页，",
-      "然后铅笔收起来把，",
-      "课堂练习放到左上角，",
-      "先把语文书翻到翻到第50页，翻到这里，",
-      "没有，50。我现在这个阳猫世，",
-      "我看谁今天的坐姿有问题啊啊，"
-    ],
-    "label": [
-      1,
-      1,
-      1,
-      0,
-      1,
-      0,
-      1,
-      0
-    ]
-  },
   "data_processor": {
-    "Task": "",
-    "T": 800
+    "Task": "teacher_dialogue_classification",
+    "T": 500
   }
 }
