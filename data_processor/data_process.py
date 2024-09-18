@@ -1,8 +1,5 @@
-import json
 import pandas as pd
-
-
-from teacher_dialogue_classification import TeacherDialogueClassificationProcessor
+from .teacher_dialogue_classification import TeacherDialogueClassificationProcessor
 
 
 class DataProcessor:
@@ -68,10 +65,11 @@ if __name__ == '__main__':
             "没有，50。我现在这个阳猫世，",
             "我看谁今天的坐姿有问题啊啊，"
         ],
-        'label': [0, 0, 0, 0, 1, 0, 1, 0]
+        'label': [0, 1, 0, 0, 1, 0, 1, 0]
     }
 
     df = pd.DataFrame(data)
+
 
     # 初始化DataProcessor，任务可以是"teacher_dialogue_classification"或"class_activity_classification"
     processor = DataProcessor(
@@ -82,4 +80,4 @@ if __name__ == '__main__':
 
     # 处理数据
     output = processor.process_and_save_sub_dfs()
-    print(output)
+    print("output", output)

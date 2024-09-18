@@ -135,7 +135,7 @@ class TeacherDialogueClassificationProcessor:
             processed_sub_df = self.merge_text_by_label(sub_df)
             json_list.append(processed_sub_df.to_json(orient='records', force_ascii=False))
         json_list = [json.loads(item) for item in json_list]
-        t_s_list = []
+        print("json_list", json_list)
         for item in json_list:
             teacher_text = ""
             student_text = ""
@@ -157,5 +157,6 @@ class TeacherDialogueClassificationProcessor:
                 """
             else:
                 text_to_analyze = f"""“老师话语”：{teacher_text}"""
-            t_s_list.append(text_to_analyze)
-        return t_s_list
+            item.append({"model_input": text_to_analyze})
+
+        return json_list

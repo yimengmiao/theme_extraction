@@ -1,67 +1,86 @@
 class ModelAPI:
-    def __init__(self, model_family, api_key, base_url=None, api_version=None):
-        self.model_family = model_family.lower()  # 更新为model_family
-        self.api_key = api_key
-        self.base_url = base_url or self._get_base_url()
-        self.api_version = api_version  # 针对GPT4o，添加api_version参数
+    def __init__(self, params):
+        self.model_family = params.get('model_family', '').lower()
+        if not self.model_family:
+            raise ValueError("Parameter 'model_family' is required.")
+
+        self.api_key = params.get('api_key')
+        if not self.api_key:
+            raise ValueError("Parameter 'api_key' is required.")
+
+        self.base_url = params.get('base_url') or self._get_base_url()
+        self.api_version = params.get('api_version')
+        self.text = params.get('text', '')
+        self.prompt = params.get('prompt', '')
+        self.model = params.get('model_name')
+        if not self.model:
+            raise ValueError("Parameter 'model' is required.")
+
+        self.max_tokens = params.get('max_tokens', 1000)
+        self.n = params.get('n', 1)
+        self.temperature = params.get('temperature', 0.7)
         self.client = self._get_client()
 
     def _get_base_url(self):
-        # 处理不同模型家族的base_url
         if self.model_family == "glm-4":
             return "https://open.bigmodel.cn/api/paas/v4/"
         elif self.model_family == "gpt4o":
-            return "https://zonekey-gpt4o.openai.azure.com/"  # Azure API端点
-        elif self.model_family.startswith("qwen"):  # 检查是否是qwen家族模型
+            return "https://zonekey-gpt4o.openai.azure.com/"
+        elif self.model_family.startswith("qwen"):
             return "https://dashscope.aliyuncs.com/compatible-mode/v1"
         else:
             raise ValueError(f"Unsupported model family: {self.model_family}")
 
     def _get_client(self):
-        # 根据不同的模型家族返回不同的客户端实例
         if self.model_family == "glm-4":
             from openai import OpenAI
             return OpenAI(api_key=self.api_key, base_url=self.base_url)
         elif self.model_family == "gpt4o":
             from openai import AzureOpenAI
-            # 针对GPT4o模型，传入api_version参数
             return AzureOpenAI(api_key=self.api_key, azure_endpoint=self.base_url, api_version=self.api_version)
-        elif self.model_family.startswith("qwen"):  # 统一处理qwen家族模型
+        elif self.model_family.startswith("qwen"):
             from openai import OpenAI
             return OpenAI(api_key=self.api_key, base_url=self.base_url)
         else:
             raise ValueError(f"Unsupported model family: {self.model_family}")
 
-    def analyze_text(self, text, prompt, model):
-        # 调用模型接口生成结果
-        user_input = prompt + text
+    def analyze_text(self):
+        user_input = self.prompt + self.text
         response = self.client.chat.completions.create(
-            model=model,  # 这里使用传入的模型名称
+            model=self.model,
             response_format={"type": "json_object"},
-            messages=[{"role": "system", "content": "你是一个乐于助人的小助手,并且每次输出的结果要是json格式"},
-                      {"role": "user", "content": user_input}],
-            max_tokens=1000,
-            n=1,
-            temperature=0.7,
+            messages=[
+                {"role": "system", "content": "你是一个乐于助人的小助手"},
+                {"role": "user", "content": user_input}
+            ],
+            max_tokens=self.max_tokens,
+            n=self.n,
+            temperature=self.temperature,
         )
         return response.choices[0].message.content
 
 
 if __name__ == '__main__':
-    # 示例调用
-    api_key = "sk-f582e4fab0894a52b12b7a85c62868bc"
-    text_to_analyze = "它分别种了什么树呢？谁来说说？于凯，你来说说看。你慢讲啊。嗯，然后呢？"
-    prompt = """后面的“待分析文本”是一段师生对话，其中，学生话语已经剔除，只保留老师话语，请对老师的话语进行分析，具体分析方法如下所示：  
-将”待分析文本“分割成”发起“、”评价“、”讲解“、“其它”四种子文本段，”发起“的分割尽可能细一点。“发起”是老师邀请、引导、鼓励学生用话语来回应的语句；“评价”是对学生回应的表扬、认可、批评等评价性话语；”讲解“是老师针对知识展开描述或对学生回应的总结；不能归属于上面三种子文本段，归属为“其它”。
-按照下面“示例”输出： 
-{"result":
-[{"type":"发起"，"content":"它分别种了什么树呢？于凯，你来说说看。"}, 
-{"type":"其它"："content":"你慢讲啊，嗯。"},
-{"type":"发起"："content":"然后呢？"},
-{"type":"讲解"："content":"然后种了杏树。"},
-{"type":"发起"："content":"最后呢？"}
-]}
-"""
+    # 定义参数
+    params = {
+        "model_family": "glm-4",
+        "api_key": "08bd304ed5c588b2c9cb534405241f0e.jPN6gjmvlBe2q1ZZ",
+        "text": "它分别种了什么树呢？谁来说说？于凯，你来说说看。你慢讲啊。嗯，然后呢？",
+        "prompt": """后面的'待分析文本'是一段师生对话，其中，学生话语已经剔除，只保留老师话语，请对老师的话语进行分析，具体分析方法如下所示：
+    将'待分析文本'分割成'发起'、'评价'、'讲解'、'其它'四种子文本段，'发起'的分割尽可能细一点。'发起'是老师邀请、引导、鼓励学生用话语来回应的语句；'评价'是对学生回应的表扬、认可、批评等评价性话语；'讲解'是老师针对知识展开描述或对学生回应的总结；不能归属于上面三种子文本段，归属为'其它'。
+    按照下面'示例'输出：
+    {"result":
+    [{"type":"发起","content":"它分别种了什么树呢？于凯，你来说说看。"}, 
+    {"type":"其它","content":"你慢讲啊，嗯。"},
+    {"type":"发起","content":"然后呢？"},
+    {"type":"讲解","content":"然后种了杏树。"},
+    {"type":"发起","content":"最后呢？"}
+    ]}""",
+        "model_name": "glm-4-flash",
+        "max_tokens": 1000,
+        "n": 1,
+        "temperature": 0.7
+    }
     # 调用GPT4o模型
 
     # 调用GPT4o模型，传入deployment_name而不是gpt4o
@@ -72,8 +91,10 @@ if __name__ == '__main__':
     # print("gpt4o_result:", gpt4o_result)
 
     # # 调用GLM-4模型
-    glm4_model = ModelAPI(model_family="glm-4", api_key="08bd304ed5c588b2c9cb534405241f0e.jPN6gjmvlBe2q1ZZ")
-    glm4_result = glm4_model.analyze_text(text=text_to_analyze, prompt=prompt, model='glm-4-flash')
+    # 创建 ModelAPI 实例并调用方法
+    model_api = ModelAPI(params)
+    glm4_result = model_api.analyze_text()
+    print("Result:", glm4_result)
     print("type(glm4_result)=", type(glm4_result))
     print("glm4_result:", glm4_result)
 
