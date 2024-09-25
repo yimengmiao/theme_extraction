@@ -1,9 +1,9 @@
 
-# DataProcessor: 专注于数据处理的灵活工具
+# DialougueProcessor: 专注于数据处理的灵活工具
 
 ## 概述
 
-`DataProcessor` 是一个专注于数据处理的工具类，允许用户根据不同的任务需求对数据进行分割、合并和输出。该类提供了一种灵活的方式来处理对话或课堂活动数据，用户可以自定义时间差阈值 `T` 并为不同的任务指定不同的处理逻辑。
+`DialougueProcessor` 是一个专注于数据处理的工具类，允许用户根据不同的任务需求对数据进行分割、合并和输出。该类提供了一种灵活的方式来处理对话或课堂活动数据，用户可以自定义时间差阈值 `T` 并为不同的任务指定不同的处理逻辑。
 
 ### 主要特点：
 - **任务驱动**：支持不同的任务类型（如师生对话分类、课堂活动分类），通过 `task` 参数动态选择处理逻辑。
@@ -61,7 +61,7 @@ data = {
 df = pd.DataFrame(data)
 
 # 初始化DataProcessor，任务为师生对话分类，时间差T由用户自定义
-processor = DataProcessor(
+processor = DialougueProcessor(
     dataset=df,  # 传入数据集
     task="teacher_dialogue_classification",  # 任务名称
     T=3000  # 自定义时间差，3秒
@@ -110,10 +110,10 @@ for json_data in json_output:
 
 ## 扩展性
 
-`DataProcessor` 设计灵活，未来可以轻松扩展其他任务。用户只需：
+`DialougueProcessor` 设计灵活，未来可以轻松扩展其他任务。用户只需：
 1. 在 `__init__` 中添加新的 `task` 类型。
 2. 在 `split_data` 和 `merge_text_by_label` 方法中根据新任务类型添加处理逻辑。
 
 ## 结论
 
-`DataProcessor` 是一个灵活且可扩展的数据处理工具，支持基于任务的工作流，并能够处理各种形式的对话数据或课堂活动数据。通过合理设置 `T` 和 `task` 参数，用户可以轻松实现复杂的数据处理任务。
+`DialougueProcessor` 是一个灵活且可扩展的数据处理工具，支持基于任务的工作流，并能够处理各种形式的对话数据或课堂活动数据。通过合理设置 `T` 和 `task` 参数，用户可以轻松实现复杂的数据处理任务。

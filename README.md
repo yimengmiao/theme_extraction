@@ -7,7 +7,7 @@
 ## 框架结构
 
 - **模型层（Model Layer）**：提供统一的接口与多种语言模型进行交互，例如 GLM-4、GPT4o、Qwen-Long 等。该层设计为通用模块，可以在不同的业务中复用，并支持未来添加新的模型。
-- **数据处理层（Data Processing Layer）**：根据不同的任务类型，处理和预处理数据，支持多种输入格式。您可以继承 `DataProcessor` 类，为新的业务需求实现特定的数据处理逻辑。
+- **数据处理层（Data Processing Layer）**：根据不同的任务类型，处理和预处理数据，支持多种输入格式。您可以继承 `DialougueProcessor` 类，为新的业务需求实现特定的数据处理逻辑。
 - **业务层（Business Layer）**：将模型层和数据处理层结合，实现具体的业务逻辑。业务层利用模型层和数据处理层提供的通用接口，简化了业务逻辑的实现过程。
 
 ## 使用步骤
@@ -45,15 +45,15 @@ pip install pandas openai
 
 ### 3. 数据处理
 
-根据您的任务类型，使用相应的数据处理器。如果现有的处理器不满足需求，您可以继承 `DataProcessor` 类，创建新的数据处理器。
+根据您的任务类型，使用相应的数据处理器。如果现有的处理器不满足需求，您可以继承 `DialougueProcessor` 类，创建新的数据处理器。
 
 **示例**：
 
 ```python
-from data_processor import DataProcessor
+from data_processor import DialougueProcessor
 
 # 初始化数据处理器
-processor = DataProcessor(dataset=your_dataset, task="your_task", T=your_threshold)
+processor = DialougueProcessor(dataset=your_dataset, task="your_task", T=your_threshold)
 
 # 处理数据
 processed_data = processor.process_and_save_sub_dfs()
@@ -93,7 +93,7 @@ result = model.analyze_text(text="待分析的文本", base_prompt="您的提示
 
 ```python
 # 数据处理
-processor = DataProcessor(dataset=your_dataset, task="your_task", T=your_threshold)
+processor = DialougueProcessor(dataset=your_dataset, task="your_task", T=your_threshold)
 processed_data = processor.process_and_save_sub_dfs()
 
 # 模型调用
@@ -123,15 +123,15 @@ df.to_excel("output.xlsx", index=False)
 
 #### 扩展数据处理层
 
-- 创建新的数据处理器类，继承自 `DataProcessor`。
+- 创建新的数据处理器类，继承自 `DialougueProcessor`。
 - 实现特定任务的数据处理逻辑。
 
 **示例**：
 
 ```python
-from data_processor import DataProcessor
+from data_processor import DialougueProcessor
 
-class NewTaskProcessor(DataProcessor):
+class NewTaskProcessor(DialougueProcessor):
     def __init__(self, dataset, T):
         super().__init__(dataset, task="new_task", T=T)
     

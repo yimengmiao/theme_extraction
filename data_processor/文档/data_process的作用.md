@@ -1,8 +1,8 @@
 
-# DataProcessor 类
+# DialougueProcessor 类
 
 ## 概述
-`DataProcessor` 是一个用于根据不同任务处理数据集的 Python 类。该类支持多种输入格式，并根据用户指定的任务类型应用相应的数据处理逻辑。
+`DialougueProcessor` 是一个用于根据不同任务处理数据集的 Python 类。该类支持多种输入格式，并根据用户指定的任务类型应用相应的数据处理逻辑。
 
 ## 功能
 - **灵活的输入格式**：支持 pandas DataFrame、JSON 字符串或字典作为输入。
@@ -14,7 +14,7 @@
 ### 初始化
 
 ```python
-processor = DataProcessor(dataset, task, T)
+processor = DialougueProcessor(dataset, task, T)
 ```
 
 - `dataset`: 要处理的数据集，支持 pandas DataFrame、JSON 字符串或字典格式。
@@ -36,8 +36,8 @@ processor = DataProcessor(dataset, task, T)
 ## 示例
 
 ```python
-# 使用 DataProcessor 类的示例
-data_processor = DataProcessor(dataset=my_data, task="teacher_dialogue_classification", T=10)
+# 使用 DialougueProcessor 类的示例
+data_processor = DialougueProcessor(dataset=my_data, task="teacher_dialogue_classification", T=10)
 processed_data = data_processor.process_and_save_sub_dfs()
 ```
 

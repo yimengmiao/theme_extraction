@@ -6,6 +6,7 @@ import logging
 
 from model_api.model_api_handler import ModelAPI
 from data_processor.data_process import DataProcessor
+from data_processor.public_data_process import extract_json_using_patterns
 
 # 配置 logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -111,37 +112,6 @@ def process_data_and_analyze(params):
     return output
 
 
-def extract_json_using_patterns(text):
-    """使用一组正则表达式模式来提取 JSON"""
-    text = text.strip()
-    logger.debug("原始文本: %s", text)
-
-    patterns = [
-        r'\{[\s\S]*\}',  # 新的正则表达式模式，匹配第一个 '{' 和最后一个 '}' 之间的内容
-        r'(\{[\s\S]*?\})\s*\}$',
-        r'\{\s*"result"\s*:\s*\[[\s\S]*?\]\s*\}',
-        r'"""json\s*(\{[\s\S]*?\})\s*"""',
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, text, re.DOTALL)
-        if match:
-            if match.lastindex:
-                json_str = match.group(1)
-            else:
-                json_str = match.group(0)
-            logger.debug("匹配到的 JSON: %s", json_str)
-            try:
-                result_data = json.loads(json_str)
-                return result_data
-            except json.JSONDecodeError as e:
-                logger.error("JSON 解析失败: %s", e)
-                continue
-
-    logger.warning("未找到符合模式的 JSON 数据")
-    return {}
-
-
 def parse_test_result(test_result):
     """解析模型返回的结果，提取 JSON"""
     if test_result:
@@ -234,7 +204,7 @@ def main():
 
     config['data'] = data_json
     config["model_parameters"]["prompt"] = prompt
-
+    print("config",config)
     Task = config.get("data_processor").get("Task")
     model_name = config.get("model_parameters").get("model_name")
 
