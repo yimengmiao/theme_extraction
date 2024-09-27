@@ -4,10 +4,11 @@ import pandas as pd
 
 from .dialogue_split import DialougueProcessor
 from .teacher_dialogue_classification import TeacherDialogueClassificationProcessor
+from .prompt3_input_data_process import Prompt3inputProcessor
 
 
 class DataProcessor:
-    def __init__(self, dataset, task, T=None):
+    def __init__(self, dataset=None, task=None, T=None, prompt2_input=None, splitpoint=None):
         """
         初始化DataProcessor类，接收所有必要参数。
 
@@ -18,15 +19,20 @@ class DataProcessor:
         self.task = task  # 任务类型，例如："teacher_dialogue_classification" 或 "class_activity_classification"
         self.T = T  # 分割时间差阈值，由用户传入
         self.dataset = dataset  # 处理输入的数据，支持DataFrame或JSON字符串
+        self.prompt2_input = prompt2_input  # prompt2的输入
+        self.split_point = splitpoint  # prompt2的输出
 
         # 根据任务类型初始化对应的处理逻辑
         if self.task == "teacher_dialogue_classification":
             # 选择老师四分类任务的数据处理逻辑。
             self.processor = TeacherDialogueClassificationProcessor(self.dataset, self.T)
-        elif self.task == "class_activity_classification":
-            self.processor = None  # 可以根据需求添加不同任务的处理类
+
         elif self.task == "dialogue_processing":
             self.processor = DialougueProcessor(self.dataset)  # 添加对DialougueProcessor的支持
+        elif self.task == "topic_extraction":
+            self.processor = Prompt3inputProcessor(self.prompt2_input, self.split_point)  #
+            # 可以根据需求添加不同任务的处理类
+
         else:
             raise ValueError(f"Unsupported task type: {self.task}")
 
@@ -56,6 +62,8 @@ class DataProcessor:
                 return final_texts
             elif self.task == "teacher_dialogue_classification":
                 return self.processor.process()  # 假设TeacherDialogueClassificationProcessor有process方法
+            elif self.task == "topic_extraction":
+                return self.processor.process()
             # 可以继续添加其他任务类型的处理逻辑
         else:
             raise NotImplementedError("Task processing for the given task is not implemented.")
@@ -85,7 +93,7 @@ if __name__ == '__main__':
     # processor = DataProcessor(
     #     dataset=data,
     #     task="teacher_dialogue_classification",  # 更改任务为"class_activity_classification"
-    #     T=500
+    #     T=800
     # )
     #
     # # 处理数据
@@ -163,3 +171,4 @@ if __name__ == '__main__':
     # 处理数据
     output = processor.process_and_save_sub_dfs()
     print("output", output)
+

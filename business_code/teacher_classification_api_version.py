@@ -1,4 +1,6 @@
 import json
+import traceback
+
 import pandas as pd
 import re
 import logging
@@ -6,10 +8,15 @@ import logging
 # 引入模型 API 处理和数据处理模块
 from model_api.model_api_handler import ModelAPI
 from data_processor.data_process import DataProcessor
-from data_processor.public_data_process import extract_json_using_patterns, remove_punctuation
+from data_processor.public_code_data_process import extract_json_using_patterns, remove_punctuation
 
-# 配置 logger，用于记录日志信息
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# 配置 logger，将日志记录存储到文件中
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='../log/app_log.log',  # 指定日志文件路径
+    filemode='a'  # 文件模式：'a' 追加模式，'w' 写入模式会覆盖之前的日志
+)
 logger = logging.getLogger(__name__)
 
 
@@ -45,6 +52,8 @@ def validate_input(params):
     except InputError as e:
         # 如果捕获到 InputError，记录错误日志并返回错误信息
         logger.error("参数校验失败: %s", e)
+        logger.error("详细堆栈信息：\n%s", traceback.format_exc())  # 添加详细堆栈跟踪信息
+
         return {"error": str(e)}
 
 
@@ -91,6 +100,8 @@ def process_data_and_analyze(params):
     except Exception as e:
         # 捕获处理数据时的异常并记录日志
         logger.error("数据处理错误: %s", e)
+        logger.error("详细堆栈信息：\n%s", traceback.format_exc())  # 添加详细堆栈跟踪信息
+
         return {"error": f"Data processing error: {str(e)}"}
 
     # 如果没有传入 model_parameters，只返回数据处理结果
@@ -131,6 +142,8 @@ def parse_test_result(test_result):
             return result_data
         except json.JSONDecodeError:
             # 如果直接解析失败，则使用正则模式提取 JSON
+            logger.error("详细堆栈信息：\n%s", traceback.format_exc())  # 添加详细堆栈跟踪信息
+
             return extract_json_using_patterns(test_result)
     else:
         logger.warning("test_result 为空")
@@ -196,15 +209,27 @@ def process_output_result(output_result, model_name):
     return df_result
 
 
-def main(model_parameters, data_processor, data, prompt, output_path):
+def row_to_json_dynamic(row, column_name):
+    return {
+        "start_time": row["start_time"],
+        "end_time": row["end_time"],
+        "text": row["text"] if pd.notna(row["text"]) else "",
+        "label": row["label"],
+        "gpt4o_result": json.loads(row[column_name]) if row[column_name] != "" else None
+    }
+
+
+def main(params):
     """
     主函数，处理数据并进行分析
-    :param model_parameters: 包含模型相关参数的字典
-    :param data_processor: 数据处理相关参数
-    :param data: 输入的数据，包含 start_time, end_time, text 和 label
-    :param prompt: 模型的提示语
-    :param output_path: 输出文件路径
+    :param params: 包含所有参数的 JSON 对象（字典格式）
     """
+    # 解构参数
+    model_parameters = params.get('model_parameters', {})
+    data_processor = params.get('data_processor', {})
+    data = params.get('data', [])
+    prompt = params.get('prompt', '')
+    output_path = params.get('output_path', None)
 
     # 更新 config 中的 prompt
     model_parameters["prompt"] = prompt
@@ -231,45 +256,53 @@ def main(model_parameters, data_processor, data, prompt, output_path):
     logger.info(f"模型结果已保存至: %s", result_filename)
 
     # 处理结果并保存为 Excel 文件
-    df_result = process_output_result(output_result, model_name)
-    df_result.to_excel(output_path, index=False)
-    logger.info(f"最终结果已保存至: %s", output_path)
+    df_result = process_output_result(output_result, model_name)  # 假设 process_output_result 函数已定义
+    # 如果传入了 output_path，则保存为 Excel 文件；如果没有传入，就不保存
+    if output_path:
+        df_result.to_excel(output_path, index=False)
+        logger.info(f"最终结果已保存至: %s", output_path)
+    else:
+        logger.info("没有传入 output_path，因此未保存结果文件。")
+
+    prediction_column = df_result.columns[-1]  # 最后一列一定是模型输出列
+
+    # 把这整个DataFrame 转换成 list of JSON 对象
+    json_data_dynamic = [row_to_json_dynamic(row, prediction_column) for _, row in df_result.iterrows()]
+
+    return json_data_dynamic
 
 
 # 示例调用
 if __name__ == '__main__':
-    # 示例数据
-    model_parameters = {
-        'model_family': 'gpt4o',
-        'api_key': 'b2e709bdd54f4416a734b4a6f8f1c7a0',
-        'model_name': 'soikit_test',
-        'api_version': '2024-02-01',
-        'prompt': ''
-    }
-
-    data_processor = {
-        'Task': 'teacher_dialogue_classification',
-        'T': 500
-    }
-
-    data = {
-        'start_time': [27300, 35310, 40560, 45590, 47910, 50070, 52780, 53000],
-        'end_time': [32940, 39510, 42710, 47190, 49590, 52760, 52790, 69880],
-        'text': [
-            '具你，为什么要我买？这是第一套。',
-            '喂，你，吃你吃你狗，你，',
-            '好，把语文书翻到第50页，',
-            '然后铅笔收起来把，',
-            '课堂练习放到左上角，',
-            '先把语文书翻到翻到第50页，翻到这里，',
-            '没有，50。我现在这个阳猫世，',
-            '我看谁今天坐姿有问题啊啊，'
-        ],
-        'label': [0, 1, 0, 0, 1, 0, 1, 0]
-    }
-
-    # 示例 prompt 和输出路径
-    prompt = """后面的“待分析文本”是一段发生在课堂上的师生对话，其中，"老师话语”是老师说的话，“学生话语”是学生说的话。有的”待分析文本“没有采集到“学生话语”。请按照以下方法对“待分析文本”进行分析：
+    # 整合所有参数到一个 JSON 列表中
+    input_json = {
+        'model_parameters': {
+            'model_family': 'gpt4o',
+            'api_key': 'b2e709bdd54f4416a734b4a6f8f1c7a0',
+            'model_name': 'soikit_test',
+            'api_version': '2024-02-01',
+            'prompt': ''  # 这个会在 main 函数中更新
+        },
+        'data_processor': {
+            'Task': 'teacher_dialogue_classification',
+            'T': 800
+        },
+        'data': {
+            'start_time': [27300, 35310, 40560, 45590, 47910, 50070, 52780, 53000],
+            'end_time': [32940, 39510, 42710, 47190, 49590, 52760, 52790, 69880],
+            'text': [
+                '具你，为什么要我买？这是第一套。',
+                '喂，你，吃你吃你狗，你，',
+                '好，把语文书翻到第50页，',
+                '然后铅笔收起来把，',
+                '课堂练习放到左上角，',
+                '先把语文书翻到翻到第50页，翻到这里，',
+                '没有，50。我现在这个阳猫世，',
+                '我看谁今天坐姿有问题啊啊，'
+            ],
+            'label': [0, 1, 0, 0, 1, 0, 1, 0]
+        },
+        'prompt': """后面的“待分析文本”是一段发生在课堂上的师生对话，其中，"老师话语”是老师说的话，“学生话语”是学生说的话。有的”待分析文本“没有采集到“学生话语”。请按照以下方法对“待分析文本”进行分析：
 首先，根据”待分析文本“上下文语义的相关性，将“老师话语“分割为“发起”、“评价”、“讲解”和“其它”四种子文本段。“发起”是老师邀请、引导、鼓励学生发言、齐读、回答问题、朗读等用话语来回应的子文本段，而不是老师让学生做动作的子文本段；“评价”是老师对学生回应的直接肯定、直接表扬、直接否定的子文本段；”讲解“是老师描述知识点、重复学生回应内容、总结学生回应的子文本段；不能归属于上面三种子文本段的，归为“其它”子文本段。
 然后，评估“学生话语”对应“发起”的符合度，符合度评分为：“高”、“中'、"低"、“无”。“高”表示“学生话语“与”发起”内容高度对应；“中”表示“学生话语“和”发起“内容有相关性但未完全回应所有内容；“低”表示”学生话语”与”发起”的内容基本不相关；“无”表示“老师话语”中没有被归为“发起”的子文本段或“待分析文本”中没有“学生话语”。如果”老师话语“中只有一个“发起”，直接输出符合度；如果“老师话语”中有多个“发起”，输出评分最高的符合度。
 参照“示例”的输出格式进行输出。
@@ -290,8 +323,9 @@ if __name__ == '__main__':
 }
 
 待分析文本：
-"""
-    output_path = "output.xlsx"
+""",
+        'output_path': 'output.xlsx'
+    }
 
-    # 调用主函数
-    main(model_parameters, data_processor, data, prompt, output_path)
+    # 调用 main 函数
+    print(main(input_json))

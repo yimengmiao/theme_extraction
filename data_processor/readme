@@ -1,0 +1,15 @@
+input:输入的是一个场景的师生对话
+
+prompt1:老师四分类任务
+prompt2:找”讲解断点“
+prompt3:场景主题输出
+
+teacher_dialogue_classification.py的作用是为了得出prompt1的输入。在business_code中的teacher_classification_api_version.py会用到这个Prompt1的输入，最终teacher_classification_api_version.py会输出这个Prompt1的输出
+
+dialogue_split.py是为了处理prompt1的输出 ，并构造成prompt2的输入。在业务代码topic_extractor_step1.py中会用到这个prompt2的输入，并输出prompt2的结果。
+
+Prompt2的结果会经过prompt3_input_data_process.py的处理，这个代码输出 的是prompt3的输入。
+
+prompt3 + prompt3的输入一起送到topic_extractor_step2.py中得到是这个场景的主题。
+
+

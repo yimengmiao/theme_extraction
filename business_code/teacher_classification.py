@@ -6,7 +6,7 @@ import logging
 
 from model_api.model_api_handler import ModelAPI
 from data_processor.data_process import DataProcessor
-from data_processor.public_data_process import extract_json_using_patterns
+from data_processor.public_code_data_process import extract_json_using_patterns
 
 # 配置 logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

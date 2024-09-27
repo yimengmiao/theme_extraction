@@ -1,6 +1,18 @@
+import traceback
+
 import pandas as pd
 import json
 from typing import Any, Dict, List, Optional, Tuple
+import logging
+
+# 配置 logger，将日志记录存储到文件中
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename='log/app_log.log',  # 指定日志文件路径
+    filemode='a'  # 文件模式：'a' 追加模式，'w' 写入模式会覆盖之前的日志
+)
+logger = logging.getLogger(__name__)
 
 
 class DialougueProcessor:
@@ -28,8 +40,11 @@ class DialougueProcessor:
             else:
                 return gpt4o_result
         except json.JSONDecodeError as e:
-            print(f"JSON解析错误: {e}")
-            print(f"原始字符串: {gpt4o_result}")
+            logger.error(f"JSON解析错误: {e}")
+
+            logger.info(f"原始字符串: {gpt4o_result}")
+            logger.error("详细堆栈信息：\n%s", traceback.format_exc())  # 添加详细堆栈跟踪信息
+
             return None
 
     def filter_and_merge(self, parsed_gpt4o_result: Optional[Dict[str, Any]]) -> Tuple[Optional[Dict[str, Any]], bool]:
@@ -48,10 +63,10 @@ class DialougueProcessor:
 
     def get_student_response(self, i: int) -> Tuple[str, int]:
         if i < len(self.df) and self.df.iloc[i]['label'] == 1:
-            R_content = self.df.iloc[i]['text'] or '学生文本可能缺失'
+            R_content = self.df.iloc[i]['text'] or '[空白]'
             i += 1
         else:
-            R_content = '学生文本可能缺失'
+            R_content = '[空白]'
         return R_content, i
 
     def get_E_after(self, i: int) -> Tuple[List[str], int]:
@@ -170,7 +185,8 @@ class DialougueProcessor:
         for segment in segments:
             segment_type = segment.get('type')
             I_text = f"发起：{segment.get('I', '')}"
-            R_content = segment.get('R', '学生话语未采集到') or '学生话语未采集到'
+            # 当学生文本为空时，赋值为[空白]
+            R_content = segment.get('R', '[空白]') or '[空白]'
             R_text = f"回应：{R_content}"
 
             if segment_type == "IR":
@@ -197,6 +213,7 @@ class DialougueProcessor:
 
 # 示例使用
 if __name__ == "__main__":
+
     data = [
         # 第一条数据
         {
@@ -230,7 +247,7 @@ if __name__ == "__main__":
                 "compliance": "高"
             })
         },
-        {"start_time": 30, "end_time": 40, "text": "学生回答2", "label": 1, "gpt4o_result": None},
+        {"start_time": 30, "end_time": 40, "text": "", "label": 1, "gpt4o_result": None},
         # E_after 数据
         {
             "start_time": 40,
@@ -262,6 +279,7 @@ if __name__ == "__main__":
 
     processor = DialougueProcessor(data)
     segments = processor.process_data()
+    print("segments", segments)
     final_texts = processor.process_segments(segments)
 
     for text in final_texts:

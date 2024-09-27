@@ -1,6 +1,7 @@
 import re
 import json
 import logging
+import string
 
 # 配置 logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -66,8 +67,8 @@ def convert_punctuation_to_chinese(text):
 # 去除标点符号
 
 def remove_punctuation(text):
-    # 中英文标点符号的正则表达式
-    punctuation_pattern = r'[，。！？、；：“”‘’（）《》【】…—]+' + r'[.,\/#!$%\^&\*;:{}=\-_`~()]'
-    # 使用正则表达式替换标点符号为空字符串
-    no_punctuation_text = re.sub(punctuation_pattern, '', text)
-    return no_punctuation_text
+    # 定义中英文标点符号
+    punctuation = string.punctuation + '，。；：“”‘’？！《》、'
+    # 使用正则表达式去除标点
+    text = re.sub(f"[{re.escape(punctuation)}]", '', text)
+    return text

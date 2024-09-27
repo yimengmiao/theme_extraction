@@ -14,7 +14,7 @@
 ### 初始化
 
 ```python
-processor = DialougueProcessor(dataset, task, T)
+processor = DataProcessor(data, task, T)
 ```
 
 - `dataset`: 要处理的数据集，支持 pandas DataFrame、JSON 字符串或字典格式。
@@ -37,7 +37,7 @@ processor = DialougueProcessor(dataset, task, T)
 
 ```python
 # 使用 DialougueProcessor 类的示例
-data_processor = DialougueProcessor(dataset=my_data, task="teacher_dialogue_classification", T=10)
+data_processor = DataProcessor(data=my_data, task="teacher_dialogue_classification", T=10)
 processed_data = data_processor.process_and_save_sub_dfs()
 ```
 
