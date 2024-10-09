@@ -1,205 +1,221 @@
-# 主题提取(theme extraction)
 
 
+# 使用指南
 
-# 指标评估算法文档（evaluate.py)
+该框架旨在为不同的业务需求提供一个可扩展的解决方案，包含模型层、数据处理层和业务层。通过该框架，您可以方便地集成新的业务逻辑，复用模型层和数据处理层，实现快速开发。
 
-## 需求概述
+## 框架结构
 
-该算法的目标是处理 `predict` 列表中的内容，并与 `label` 列表中的内容进行匹配。通过找到公共子文本串来评估两者的匹配程度。新的要求是在匹配时，只要找到公共子文本串，无需考虑两者的 `type` 是否一致，直接将 `label` 中的 `type` 和 `content` 填充到匹配到的 `predict` 项中。
+- **模型层（Model Layer）**：提供统一的接口与多种语言模型进行交互，例如 GLM-4、GPT4o、Qwen-Long 等。该层设计为通用模块，可以在不同的业务中复用，并支持未来添加新的模型。
+- **数据处理层（Data Processing Layer）**：根据不同的任务类型，处理和预处理数据，支持多种输入格式。您可以继承 `DialougueProcessor` 类，为新的业务需求实现特定的数据处理逻辑。
+- **业务层（Business Layer）**：将模型层和数据处理层结合，实现具体的业务逻辑。业务层利用模型层和数据处理层提供的通用接口，简化了业务逻辑的实现过程。
 
----
+## 使用步骤
 
-## 算法流程
+### 1. 安装依赖
 
-### 1. 最长公共子文本串算法
+确保您的 Python 环境满足以下要求：
 
-我们使用动态规划算法实现最长公共子文本串算法（`algrot`），它用于找出两个文本中最长的公共子串，并作为衡量两个文本相似度的依据。
+- **Python 版本**：Python 3.6 及以上
+- **必要的 Python 库**：
+  - `pandas`
+  - `openai`
+  - 以及框架中包含的自定义模块
 
-    algrot(text1, text2) 函数：
-    
-    功能：计算 `text1` 和 `text2` 的最长公共子文本串。
-    参数：
-        text1：第一个输入文本。
-        text2：第二个输入文本。
-    返回值：
-        最长公共子文本串。
+安装必要的库：
 
-### 2. 去除标点符号
+```bash
+pip install pandas openai
+```
 
-为了使文本匹配更加准确，匹配前会对 `predict` 和 `label` 列表中的文本去除标点符号。
+### 2. 准备数据
 
-    remove_punctuation(text) 函数：
-    
-    功能：移除文本中的所有标点符号。
-    参数：
-        text：输入的文本字符串。
-    返回值：
-        去除了标点符号的文本字符串。
+根据您的业务需求，准备输入数据。框架支持多种数据格式，包括：
 
-### 3. 计算匹配占比
+- **Pandas DataFrame**
+- **JSON 字符串**
+- **字典**
 
-计算找到的最长公共子文本串在 `label` 项中的文本长度占比，以此来衡量匹配的程度。匹配程度最高的 `label` 项将被选为最佳匹配。
+数据应包含业务所需的字段，例如：
 
-    calculate_match_ratio(substring, content) 函数：
-    
-    功能：计算公共子串在目标文本中的占比。
-    参数：
-        substring：最长公共子串。
-        content：目标文本。
-    返回值：
-        公共子串长度与目标文本长度的比值。
+- `start_time`
+- `end_time`
+- `text`
+- `label`
 
-### 4. 不再考虑 `type` 匹配
+### 3. 数据处理
 
-在找到最长公共子文本串后，无需再判断 `predict` 项和 `label` 项中的 `type` 是否一致。只要找到公共子文本串，即将 `label` 中的 `content` 和 `type` 填充到 `predict` 项中。
+根据您的任务类型，使用相应的数据处理器。如果现有的处理器不满足需求，您可以继承 `DialougueProcessor` 类，创建新的数据处理器。
 
-    find_best_match(predict_item, labels) 函数：
-    
-    功能：为每个 `predict` 项找到最佳匹配的 `label` 项。
-    参数：
-        predict_item：`predict` 列表中的一项。
-        labels：`label` 列表。
-    返回值：
-        最佳匹配的 `label` 项。
-
-### 5. 记录匹配结果
-
-对每个 `predict` 项目，记录其与 `label` 项中的最佳匹配，包含匹配到的 `content` 和 `type`。未匹配的项目则保持原状。
-
-    process_predictions(predict, labels) 函数：
-    
-    功能：处理 `predict` 列表，找到每个 `predict` 项的最佳匹配，并记录匹配结果。
-    参数：
-        predict：`predict` 列表。
-        labels：`label` 列表。
-    返回值：
-        包含匹配结果的 `predict` 列表。
-
----
-
-## 代码实现
+**示例**：
 
 ```python
-import re
+from data_processor import DialougueProcessor
 
-# 去除标点符号的函数
-def remove_punctuation(text):
-    """
-    移除输入文本中的标点符号。
-    Args:
-    - text: 输入的文本字符串。
-    
-    Returns:
-    - 去除标点符号后的文本字符串。
-    """
-    return re.sub(r'[^\w\s]', '', text)
+# 初始化数据处理器
+processor = DialougueProcessor(dataset=your_dataset, task="your_task", T=your_threshold)
 
-# 最长公共子文本串算法
-def algrot(text1, text2):
-    """
-    使用动态规划算法，计算两个字符串的最长公共子文本串。
-    Args:
-    - text1: 第一个字符串。
-    - text2: 第二个字符串。
-    
-    Returns:
-    - 最长公共子文本串。
-    """
-    m = len(text1)
-    n = len(text2)
-    max_len = 0
-    ending_index = m
-    dp = [[0] * (n + 1) for _ in range(m + 1)]
-    
-    # 动态规划填充表格，计算公共子串长度
-    for i in range(1, m + 1):
-        for j in range(1, n + 1):
-            if text1[i - 1] == text2[j - 1]:
-                dp[i][j] = dp[i - 1][j - 1] + 1
-                if dp[i][j] > max_len:
-                    max_len = dp[i][j]
-                    ending_index = i
-            else:
-                dp[i][j] = 0
-    
-    # 返回最长公共子串
-    return text1[ending_index - max_len: ending_index]
+# 处理数据
+processed_data = processor.process_and_save_sub_dfs()
+```
 
-# 计算匹配占比
-def calculate_match_ratio(substring, content):
-    """
-    计算公共子串在目标文本中的占比。
-    Args:
-    - substring: 公共子串。
-    - content: 目标文本。
-    
-    Returns:
-    - 公共子串长度与目标文本长度的比值。
-    """
-    return len(substring) / len(content) if content else 0
+- `dataset`：您的输入数据
+- `task`：任务名称，例如 `"teacher_dialogue_classification"`
+- `T`：时间差阈值，根据任务需求设定
 
-# 查找最佳匹配
-def find_best_match(predict_item, labels):
-    """
-    在 label 列表中为 predict_item 查找最佳匹配的 label 项。
-    Args:
-    - predict_item: 需要匹配的 predict 项。
-    - labels: label 列表。
-    
-    Returns:
-    - 最佳匹配的 label 项。
-    """
-    best_match = None
-    highest_ratio = 0
-    
-    # 先去除标点符号
-    predict_content_no_punc = remove_punctuation(predict_item['content'])
-    
-    for label in labels:
-        label_content_no_punc = remove_punctuation(label['content'])
-        # 使用最长公共子串算法进行匹配
-        substring = algrot(predict_content_no_punc, label_content_no_punc)
-        ratio = calculate_match_ratio(substring, label_content_no_punc)
-        
-        # 记录匹配占比最高的 label 项
-        if ratio > highest_ratio:
-            highest_ratio = ratio
-            best_match = label
-    
-    return best_match
+### 4. 模型调用
 
-# 处理预测与匹配
-def process_predictions(predict, labels):
-    """
-    处理 predict 列表，找到每个 predict 项在 label 列表中的最佳匹配项。
-    Args:
-    - predict: 需要处理的 predict 列表。
-    - labels: label 列表。
-    
-    Returns:
-    - 包含匹配结果的 predict 列表。
-    """
-    results = []
-    
-    # 遍历 predict 列表中的所有项
-    for predict_item in predict:
-        best_match = find_best_match(predict_item, labels)
-        
-        # 只要找到匹配的 label 项，不管 type 是否匹配，都进行记录
-        if best_match:
-            predict_item['matched_content'] = best_match['content']
-            predict_item['matched_type'] = best_match['type']
-        
-        results.append(predict_item)
-    
-    return results
+使用 `ModelAPI` 类与指定的模型进行交互。您可以在模型层中添加新的模型支持。
 
-# 执行算法示例
-# 定义 label 和 predict 列表
-label = [{'type': '发起', 'content': '请袁艺喊“开始上课”，声音要响亮啊。'}, ...]
+**示例**：
 
-predict = [{'type': '发起', 'content': '请袁艺喊“开始上课”，声音要响亮啊。'}, ...]
+```python
+from model_api_handler import ModelAPI
 
-# 执行预测处理
-results = process_predictions(predict, label)
+# 初始化模型 API
+api_key = "your_api_key"
+model = ModelAPI(model_name="your_model_name", api_key=api_key)
+
+# 分析文本
+result = model.analyze_text(text="待分析的文本", base_prompt="您的提示语")
+```
+
+- `model_name`：模型名称，例如 `"glm-4"`
+- `api_key`：模型 API 密钥
+- `text`：待分析的文本
+- `base_prompt`：模型提示语
+
+### 5. 业务集成
+
+在业务层，将数据处理和模型调用结合，实现完整的业务流程。
+
+**示例**：
+
+```python
+# 数据处理
+processor = DialougueProcessor(dataset=your_dataset, task="your_task", T=your_threshold)
+processed_data = processor.process_and_save_sub_dfs()
+
+# 模型调用
+api_key = "your_api_key"
+model = ModelAPI(model_name="your_model_name", api_key=api_key)
+
+results = []
+for data_segment in processed_data:
+    text_to_analyze = data_segment['text']
+    base_prompt = "您的提示语"
+    result = model.analyze_text(text=text_to_analyze, base_prompt=base_prompt)
+    results.append({
+        'text': text_to_analyze,
+        'model_output': result
+    })
+
+# 保存结果
+import pandas as pd
+
+df = pd.DataFrame(results)
+df.to_excel("output.xlsx", index=False)
+```
+
+### 6. 扩展新业务
+
+当有新的业务需求时，您可以按照以下步骤进行扩展：
+
+#### 扩展数据处理层
+
+- 创建新的数据处理器类，继承自 `DialougueProcessor`。
+- 实现特定任务的数据处理逻辑。
+
+**示例**：
+
+```python
+from data_processor import DialougueProcessor
+
+class NewTaskProcessor(DialougueProcessor):
+    def __init__(self, dataset, T):
+        super().__init__(dataset, task="new_task", T=T)
+    
+    def process(self):
+        # 实现新的数据处理逻辑
+        pass
+```
+
+#### 扩展模型层
+
+- 在 `ModelAPI` 类中添加对新模型的支持。
+- 实现新模型的 API 调用逻辑。
+
+**示例**：
+
+```python
+class ModelAPI:
+    # 现有代码...
+
+    def _get_base_url(self):
+        # 添加新模型的 API 端点
+        base_urls = {
+            "glm-4": "https://api.glm-4.com/v1/",
+            "new-model": "https://api.new-model.com/v1/"
+        }
+        return base_urls.get(self.model_name)
+    
+    def _get_client(self):
+        # 实现新模型的客户端逻辑
+        if self.model_name == "new-model":
+            # 新模型的 API 调用方式
+            pass
+```
+
+#### 更新业务层
+
+- 在业务层中，使用新的数据处理器和模型，实现新的业务逻辑。
+
+**示例**：
+
+```python
+# 数据处理
+processor = NewTaskProcessor(dataset=your_dataset, T=your_threshold)
+processed_data = processor.process()
+
+# 模型调用
+model = ModelAPI(model_name="new-model", api_key="your_api_key")
+
+# 业务逻辑
+for data_segment in processed_data:
+    result = model.analyze_text(text=data_segment['text'], base_prompt="新的提示语")
+    # 处理结果
+```
+
+### 7. 运行脚本
+
+您可以通过命令行参数来运行脚本，实现不同的业务需求。
+
+**示例**：
+
+```bash
+python your_script.py --data path/to/data.xlsx --config path/to/config.json --prompt path/to/prompt.txt --output path/to/output.xlsx
+```
+
+- `--data`：数据文件路径
+- `--config`：配置文件路径，包含模型和数据处理参数
+- `--prompt`：模型提示语文件路径
+- `--output`：输出文件路径
+
+## 注意事项
+
+- **模块复用**：充分利用模型层和数据处理层的可复用性，避免重复开发。
+- **代码规范**：遵循良好的代码规范和注释习惯，提升代码的可读性和可维护性。
+- **错误处理**：在实际应用中，添加必要的错误处理和异常捕获，确保程序的稳定运行。
+- **性能优化**：针对大规模数据处理，考虑性能优化方案，例如批量处理、异步调用等。
+
+## 示例项目
+
+您可以参考提供的老师四分类业务脚本，了解如何使用该框架实现具体的业务需求。该示例展示了如何：
+
+- 使用 `TeacherDialogueClassificationProcessor` 处理数据
+- 利用 `ModelAPI` 调用模型进行分析
+- 将结果保存为 Excel 文件，方便查看和分析
+
+---
+
+希望这个使用指南能帮助您快速上手该框架，并利用其灵活的扩展性满足不同的业务需求。

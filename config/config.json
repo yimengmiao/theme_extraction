@@ -1,0 +1,12 @@
+{
+  "model_parameters": {
+    "model_family": "gpt4o",
+    "api_key": "b2e709bdd54f4416a734b4a6f8f1c7a0",
+    "model_name": "soikit_test",
+    "api_version": "2024-02-01"
+  },
+  "data_processor": {
+    "Task": "teacher_dialogue_classification",
+    "T": 500
+  }
+}

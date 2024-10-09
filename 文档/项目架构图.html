@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NLP 架构图</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .layer {
+            border: 2px solid #333;
+            padding: 20px;
+            margin: 20px;
+            width: 90%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            box-sizing: border-box;
+        }
+
+        /* 为不同的层增加背景颜色 */
+        .layer:nth-child(1) {
+            background-color: #f0f9ff;
+        }
+
+        .layer:nth-child(2) {
+            background-color: #e0f7f5;
+        }
+
+        .layer:nth-child(3) {
+            background-color: #fff9e6;
+        }
+
+        .layer-title {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            font-size: 24px;
+            font-weight: bold;
+            color: #444;
+            margin-right: 20px;
+        }
+
+        .component {
+            border: 1px solid #666;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* 根据组件所属层设置宽度 */
+        .component-half {
+            width: calc(50% - 40px);
+        }
+
+        .component-third {
+            width: calc(33.333% - 40px);
+        }
+
+        .component-content {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 悬停提示（Tooltips） */
+        .component:hover .tooltip {
+            display: block;
+        }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            width: 220px;
+            text-align: center;
+            z-index: 1;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 图标样式增强 */
+        .component strong {
+            font-size: 18px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        /* 模型展示列表 */
+        .model-list {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .model {
+            border: 1px solid #666;
+            padding: 5px 10px;
+            border-radius: 8px;
+            background-color: #e6f7ff;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        /* 使组件在一行显示多个 */
+        .layer-content {
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                width: 100%;
+                padding: 10px;
+            }
+
+            .layer {
+                width: 100%;
+            }
+
+            .component {
+                width: 100% !important;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Business Layer -->
+    <div class="layer">
+        <div class="layer-title">🏢 业务层</div>
+        <div class="layer-content">
+            <div class="component component-half">
+                <div class="component-content">
+                    <strong>🧠 TaskHandler</strong><br>
+                    📚 处理特定任务：<br>
+                    - 👩‍🏫 教师四分类任务<br>
+                    - 🏫 课堂活动分类任务<br>
+                    🔄 集成模型输出和业务逻辑<br>
+                    📈 可扩展性：支持添加新任务<br>
+                </div>
+                <div class="tooltip">
+                    业务层负责处理具体的算法任务，将模型结果应用于业务场景。
+                </div>
+            </div>
+            <div class="component component-half">
+                <div class="component-content">
+                    <strong>🔧 算法逻辑</strong><br>
+                    🧮 定义任务所需的算法流程<br>
+                    ⚙️ 调用相应的模型和数据处理模块<br>
+                    🔍 结果分析与决策支持
+                </div>
+                <div class="tooltip">
+                    实现具体任务的算法逻辑，提供决策支持。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Processing Layer -->
+    <div class="layer">
+        <div class="layer-title">📊 数据处理层</div>
+        <div class="layer-content">
+            <div class="component component-half">
+                <div class="component-content">
+                    <strong>💻 DialougueProcessor</strong><br>
+                    📥 数据导入：支持 CSV、Excel、数据库等<br>
+                    ✏️ 数据预处理：清洗、去噪、格式转换<br>
+                    🔄 特征工程：提取特征、向量化<br>
+                    📊 数据增强：数据扩充与合成
+                </div>
+                <div class="tooltip">
+                    数据处理层负责数据的导入、清洗和特征提取等预处理工作。
+                </div>
+            </div>
+            <div class="component component-half">
+                <div class="component-content">
+                    <strong>⚙️ 自定义处理</strong><br>
+                    🛠 支持用户自定义数据处理管道<br>
+                    📄 配置文件或界面选择处理步骤<br>
+                    🔌 可插拔式模块，方便扩展
+                </div>
+                <div class="tooltip">
+                    允许用户根据需求自定义数据处理流程，提升灵活性。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Layer -->
+    <div class="layer">
+        <div class="layer-title">🧠 模型层</div>
+        <div class="layer-content">
+            <div class="component component-third">
+                <div class="component-content">
+                    <strong>🎯 ModelAPI</strong><br>
+                    🔗 封装模型 API 调用<br>
+                    ⚙️ 动态配置：模型名称、版本、参数<br>
+                    🛠 统一接口：`analyze_text`、`predict`<br>
+                    📡 异步调用支持，提高性能
+                </div>
+                <div class="tooltip">
+                    模型层负责与各种 NLP 模型进行交互，提供统一的接口。
+                </div>
+            </div>
+            <div class="component component-third">
+                <div class="component-content">
+                    <strong>🌐 支持的模型</strong><br>
+                    <div class="model-list">
+                        <div class="model">🔹 GPT-4</div>
+                        <div class="model">🔹 Qwen</div>
+                        <div class="model">🔹 GLM-4</div>
+                    </div>
+                    ➕ 持续集成更多模型
+                </div>
+                <div class="tooltip">
+                    支持多种模型，方便扩展。
+                </div>
+            </div>
+            <div class="component component-third">
+                <div class="component-content">
+                    <strong>📈 扩展性与优化</strong><br>
+                    🔧 模型管理：加载、更新、切换<br>
+                    ⚡️ 性能优化：批量预测、缓存机制<br>
+                    🧩 模型组合：集成多个模型的结果
+                </div>
+                <div class="tooltip">
+                    提供模型管理和性能优化功能，支持复杂的模型组合。
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
