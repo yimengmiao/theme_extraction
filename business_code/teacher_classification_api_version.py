@@ -9,7 +9,7 @@ import logging
 from model_api.model_api_handler import ModelAPI
 from data_processor.data_process import DataProcessor
 from data_processor.public_code_data_process import extract_json_using_patterns, remove_punctuation
-
+from config.common_config import ALTERNATE_MODEL_PARAMETERS
 # 配置 logger，将日志记录存储到文件中
 logging.basicConfig(
     level=logging.INFO,
@@ -44,6 +44,17 @@ def validate_input(params):
         if "data" not in params or not params["data"]:
             raise InputError("data is a required field and cannot be empty.")
 
+        # 必要字段列表
+        required_keys = ['start_time', 'end_time', 'text', 'label']
+        data = params.get('data')
+
+        # 校验数据的格式，确保必须字段存在并且为列表
+        for key in required_keys:
+            if key not in data:
+                raise InputError(f"Missing required key '{key}' in data.")
+            if not isinstance(data[key], list):
+                raise InputError(f"'{key}' in data must be a list.")
+
         # 校验 model_parameters 中的各个参数是否非空
         if "model_parameters" in params:
             for key, value in params["model_parameters"].items():
@@ -70,28 +81,16 @@ def process_data_and_analyze(params):
         logger.error("参数校验失败: %s", error)
         return error  # 如果有错误，直接返回错误信息
 
-    # 必要字段列表
-    required_keys = ['start_time', 'end_time', 'text', 'label']
+    # 提取必要的参数
     data = params.get('data')
-
-    if not data:
-        logger.error("缺少 'data' 字段")
-        return {"error": "Missing 'data' field in parameters."}
-
-    # 校验数据的格式，确保必须字段存在并且为列表
-    for key in required_keys:
-        if key not in data:
-            logger.error("缺少必要字段 '%s' 在 data 中", key)
-            return {"error": f"Missing required key '{key}' in data."}
-        if not isinstance(data[key], list):
-            logger.error("'%s' 在 data 中必须为列表", key)
-            return {"error": f"'{key}' in data must be a list."}
+    task = params['data_processor'].get('Task', "teacher_dialogue_classification")  # 默认任务类型
+    T = params['data_processor'].get('T', 800)  # 时间差阈值，默认 800
 
     # 初始化数据处理类，根据任务类型和时间阈值处理数据
     processor = DataProcessor(
         dataset=data,  # 传入数据字典
-        task=params['data_processor'].get('Task', "teacher_dialogue_classification"),  # 默认任务类型
-        T=params['data_processor'].get('T', 800)  # 时间差阈值，默认 800
+        task=task,
+        T=T
     )
 
     try:
@@ -110,21 +109,40 @@ def process_data_and_analyze(params):
         return output
 
     # 如果存在 model_parameters，调用模型进行进一步分析
+    model_name = params['model_parameters'].get("model_name", "")  # 获取模型名称
     for item in output:
-        model_name = params['model_parameters'].get("model_name", "glm-4-flash")  # 获取模型名称
         params['model_parameters']['text'] = item[2].get("model_input")  # 将处理后的输入文本传入模型参数
         logger.info("调用模型的入参 params: %s", params)
 
         # 调用模型 API 进行分析
-        model_api = ModelAPI(params.get("model_parameters", ""))
-        result = model_api.analyze_text()
+        try:
+            model_api = ModelAPI(params.get("model_parameters", ""))
+            result = model_api.analyze_text()
+            logger.info("模型分析结果: %s", result)
+        except Exception as e:
+            logger.error("模型 API 调用错误: %s", e)
+            logger.error("详细堆栈信息：\n%s", traceback.format_exc())
 
-        # 记录模型分析结果
-        logger.info("模型分析结果: %s", result)
+            # 这里要调用一个备用模型, gpt4o，或者其它
+            logger.info("尝试调用付费模型gpt4o")
+            try:
+                prompt1 = params['model_parameters'].get('prompt', "")
+                params["model_parameters"] = ALTERNATE_MODEL_PARAMETERS
+                params["model_parameters"]["prompt"] = prompt1
+                params['model_parameters']['text'] = item[2].get("model_input")
+                model_api = ModelAPI(params.get("model_parameters", ""))
+                result = model_api.analyze_text()
+                logger.info("备用模型 gpt4o 分析结果: %s", result)
+            except Exception as fallback_e:
+                # 如果这个模型调用也失败，则返回错误信息
+                logger.error("备用模型 gpt4o调用失败: %s", fallback_e)
+                logger.error("详细堆栈信息：\n%s", traceback.format_exc())
+                return {"error": f"Fallback model API error: {str(fallback_e)}"}
 
         # 将模型分析结果加入输出项中
         item.append({f"{model_name}_result": result})
         logger.debug("模型分析后的 item: %s", item)
+
     return output
 
 
@@ -136,14 +154,17 @@ def parse_test_result(test_result):
     """
     if test_result:
         try:
+            if isinstance(test_result, dict) and 'error' in test_result:
+                logger.error("模型返回了错误信息: %s", test_result['error'])
+                return {}
             # 尝试直接解析 JSON 数据
             result_data = json.loads(test_result)
             logger.debug("直接解析的 JSON 数据: %s", result_data)
             return result_data
         except json.JSONDecodeError:
             # 如果直接解析失败，则使用正则模式提取 JSON
-            logger.error("详细堆栈信息：\n%s", traceback.format_exc())  # 添加详细堆栈跟踪信息
-
+            logger.error("JSON 解码错误，尝试使用正则表达式提取 JSON")
+            logger.error("详细堆栈信息：\n%s", traceback.format_exc())
             return extract_json_using_patterns(test_result)
     else:
         logger.warning("test_result 为空")
@@ -175,7 +196,7 @@ def process_output_result(output_result, model_name):
         logger.debug("子列表: %s", sublist)
 
         new_sublist = []
-        # 这里是以防不能从模型的输出 结果 中解析出json而做的。
+        # 这里是以防不能从模型的输出结果中解析出 JSON 而做的。
         if not contents:
             for item in sublist:
                 if 'start_time' in item:
@@ -190,8 +211,8 @@ def process_output_result(output_result, model_name):
             if 'start_time' in item:
                 new_item = item.copy()
                 match_found = False
-                for content in contents["result"]:
-                    if content['content'] != "":
+                for content in contents.get("result", []):
+                    if content.get('content', '') != "":
                         # 去除掉标点符号后再匹配
                         if remove_punctuation(content['content']) in remove_punctuation(item['text']):
                             logger.debug("找到匹配内容")
@@ -219,44 +240,33 @@ def row_to_json_dynamic(row, column_name):
     }
 
 
-def main(params):
+def Teacher_four_categories(params):
     """
     主函数，处理数据并进行分析
     :param params: 包含所有参数的 JSON 对象（字典格式）
     """
-    # 解构参数
-    model_parameters = params.get('model_parameters', {})
-    data_processor = params.get('data_processor', {})
-    data = params.get('data', [])
-    prompt = params.get('prompt', '')
+    # 提取参数
     output_path = params.get('output_path', None)
-
-    # 更新 config 中的 prompt
-    model_parameters["prompt"] = prompt
-
-    # 将所有参数打包成一个字典
-    config = {
-        "model_parameters": model_parameters,
-        "data_processor": data_processor,
-        "data": data
-    }
-
-    logger.info("配置文件: %s", config)
+    logger.info("配置文件: %s", params)
 
     # 处理和分析数据
-    output_result = process_data_and_analyze(config)
+    output_result = process_data_and_analyze(params)
     logger.info("处理和分析的结果: %s", output_result)
 
+    # 如果 output_result 是错误信息，直接返回
+    if isinstance(output_result, dict) and "error" in output_result:
+        return output_result
+
     # 保存结果为 JSON 文件
-    Task = data_processor.get("Task")
-    model_name = model_parameters.get("model_name")
-    result_filename = f"不同task任务调用闭源模型生成的结果/{Task}_{model_name}_result.json"
+    Task = params.get("data_processor").get("Task")
+    model_name = params.get("model_parameters").get("model_name")
+    result_filename = f"{Task}_{model_name}_result.json"
     with open(result_filename, "w", encoding="utf-8") as f:
         json.dump(output_result, f, ensure_ascii=False)
     logger.info(f"模型结果已保存至: %s", result_filename)
 
     # 处理结果并保存为 Excel 文件
-    df_result = process_output_result(output_result, model_name)  # 假设 process_output_result 函数已定义
+    df_result = process_output_result(output_result, model_name)
     # 如果传入了 output_path，则保存为 Excel 文件；如果没有传入，就不保存
     if output_path:
         df_result.to_excel(output_path, index=False)
@@ -266,7 +276,7 @@ def main(params):
 
     prediction_column = df_result.columns[-1]  # 最后一列一定是模型输出列
 
-    # 把这整个DataFrame 转换成 list of JSON 对象
+    # 把这整个 DataFrame 转换成 list of JSON 对象
     json_data_dynamic = [row_to_json_dynamic(row, prediction_column) for _, row in df_result.iterrows()]
 
     return json_data_dynamic
@@ -281,7 +291,28 @@ if __name__ == '__main__':
             'api_key': 'b2e709bdd54f4416a734b4a6f8f1c7a0',
             'model_name': 'soikit_test',
             'api_version': '2024-02-01',
-            'prompt': ''  # 这个会在 main 函数中更新
+            'prompt': """后面的“待分析文本”是一段发生在课堂上的师生对话，其中，"老师话语”是老师说的话，“学生话语”是学生说的话。有的”待分析文本“没有采集到“学生话语”。请按照以下方法对“待分析文本”进行分析：
+首先，根据”待分析文本“上下文语义的相关性，将“老师话语“分割为“发起”、“评价”、“讲解”和“其它”四种子文本段。“发起”是老师邀请、引导、鼓励学生发言、齐读、回答问题、朗读等用话语来回应的子文本段，而不是老师让学生做动作的子文本段；“评价”是老师对学生回应的直接肯定、直接表扬、直接否定的子文本段；”讲解“是老师描述知识点、重复学生回应内容、总结学生回应的子文本段；不能归属于上面三种子文本段的，归为“其它”子文本段。
+然后，评估“学生话语”对应“发起”的符合度，符合度评分为：“高”、“中'、"低"、“无”。“高”表示“学生话语“与”发起”内容高度对应；“中”表示“学生话语“和”发起“内容有相关性但未完全回应所有内容；“低”表示”学生话语”与”发起”的内容基本不相关；“无”表示“老师话语”中没有被归为“发起”的子文本段或“待分析文本”中没有“学生话语”。如果”老师话语“中只有一个“发起”，直接输出符合度；如果“老师话语”中有多个“发起”，输出评分最高的符合度。
+参照“示例”的输出格式进行输出。
+示例：
+“老师话语”：讲话的时候可以加上表情和动作，这样表演的更好，其他同学在这位同学表演的时候都在认真听讲，乌鸦，一处，你这样吧，你上来吧，好不好？哎，你上来讲好不好？
+
+”学生话语“：一只乌鸦哇哇的对，猴子说，猴哥猴哥，你怎么种梨树呢？
+输出是一个json格式：
+
+{
+"result":
+[{"type":"讲解","content": "讲话的时候可以加上表情和动作，这样表演的更好，"},
+{"type":"其它","content":"其他同学在这位同学表演的时候都在认真听讲，"},
+{"type":"评价","content": "真棒，"},
+{"type":"发起","content": "乌鸦，一处，你这样吧，你上来吧，好不好？"},
+{"type":"发起" ,"content":"哎，你上来讲好不好？"}],
+"compliance": "高"
+}
+
+待分析文本：
+"""  # 这个会在 main 函数中更新
         },
         'data_processor': {
             'Task': 'teacher_dialogue_classification',
@@ -302,30 +333,10 @@ if __name__ == '__main__':
             ],
             'label': [0, 1, 0, 0, 1, 0, 1, 0]
         },
-        'prompt': """后面的“待分析文本”是一段发生在课堂上的师生对话，其中，"老师话语”是老师说的话，“学生话语”是学生说的话。有的”待分析文本“没有采集到“学生话语”。请按照以下方法对“待分析文本”进行分析：
-首先，根据”待分析文本“上下文语义的相关性，将“老师话语“分割为“发起”、“评价”、“讲解”和“其它”四种子文本段。“发起”是老师邀请、引导、鼓励学生发言、齐读、回答问题、朗读等用话语来回应的子文本段，而不是老师让学生做动作的子文本段；“评价”是老师对学生回应的直接肯定、直接表扬、直接否定的子文本段；”讲解“是老师描述知识点、重复学生回应内容、总结学生回应的子文本段；不能归属于上面三种子文本段的，归为“其它”子文本段。
-然后，评估“学生话语”对应“发起”的符合度，符合度评分为：“高”、“中'、"低"、“无”。“高”表示“学生话语“与”发起”内容高度对应；“中”表示“学生话语“和”发起“内容有相关性但未完全回应所有内容；“低”表示”学生话语”与”发起”的内容基本不相关；“无”表示“老师话语”中没有被归为“发起”的子文本段或“待分析文本”中没有“学生话语”。如果”老师话语“中只有一个“发起”，直接输出符合度；如果“老师话语”中有多个“发起”，输出评分最高的符合度。
-参照“示例”的输出格式进行输出。
-示例：
-“老师话语”：讲话的时候可以加上表情和动作，这样表演的更好，其他同学在这位同学表演的时候都在认真听讲，乌鸦，一处，你这样吧，你上来吧，好不好？哎，你上来讲好不好？
 
-”学生话语“：一只乌鸦哇哇的对，猴子说，猴哥猴哥，你怎么种梨树呢？
-输出是一个json格式：
-
-{
-"result":
-[{"type":"讲解","content": "讲话的时候可以加上表情和动作，这样表演的更好，"},
-{"type":"其它","content":"其他同学在这位同学表演的时候都在认真听讲，"},
-{"type":"评价","content": "真棒，"},
-{"type":"发起","content": "乌鸦，一处，你这样吧，你上来吧，好不好？"},
-{"type":"发起" ,"content""哎，你上来讲好不好？"}],
-"compliance": "高"
-}
-
-待分析文本：
-""",
         'output_path': 'output.xlsx'
     }
 
-    # 调用 main 函数
-    print(main(input_json))
+    # 调用主函数
+    result = Teacher_four_categories(input_json)
+    print(result)

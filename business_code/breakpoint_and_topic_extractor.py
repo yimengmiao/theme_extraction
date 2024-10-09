@@ -1,9 +1,11 @@
+import json
 import logging
 import traceback
 
 from data_processor.public_code_data_process import extract_json_using_patterns
 from model_api.model_api_handler import ModelAPI
 from data_processor.data_process import DataProcessor
+from config.common_config import ALTERNATE_MODEL_PARAMETERS
 
 # 配置 logger
 logging.basicConfig(
@@ -15,11 +17,51 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def topic_extracotr(params):
+def merge_texts_into_dict(list1, dict1):
+    """
+    根据 任务3：主题提取输出中的 d_number，与任务3的输入中对应的文本合并，并添加到 任务3 输出 中 的每个子主题的 sub_text 键中。
+
+    参数：
+        prompt3_input(list): 包含编号和文本内容的列表。
+        prompt3_output(dict): 包含主题和子主题信息的字典。
+
+    返回：
+        dict: 更新后的 prompt3_output，添加了每个子主题的 sub_text。
+    """
+    # 创建一个字典，将 d_number 映射到对应的文本内容
+    d_number_to_text = {}
+
+    for item in list1:
+        # 分割编号和文本内容
+        parts = item.strip().split('\n', 1)
+        if len(parts) == 2:
+            try:
+                number = int(parts[0])
+                text = parts[1].strip()
+                d_number_to_text[number] = text
+            except ValueError:
+                continue  # 如果编号不是整数，跳过该项
+
+    # 根据 dict1 中的 d_number，将对应的文本合并并添加到 sub_text 键中
+    for sub in dict1['split'].values():
+        d_numbers = sub.get('d_number', [])
+        if not isinstance(d_numbers, list):
+            d_numbers = json.loads(d_numbers)
+        merged_texts = []
+        for num in d_numbers:
+            text = d_number_to_text.get(num)
+            if text:
+                merged_texts.append(text)
+        sub['sub_text'] = '\n\n'.join(merged_texts)
+
+    return dict1
+
+
+def topic_extract(params):
     """主题提取代码"""
     # 初始化数据处理类
     processor = DataProcessor(
-        dataset=params.get("data"),  # 这里传入的是 data 字典
+        dataset=params.get("data"),
         task=params['data_processor'].get('Task', "teacher_dialogue_classification"),
         T=params['data_processor'].get('T', 800)
     )
@@ -29,7 +71,7 @@ def topic_extracotr(params):
         output = processor.process_and_save_sub_dfs()
     except Exception as e:
         logger.error("数据处理错误: %s", e)
-        logger.error("详细堆栈信息：\n%s", traceback.format_exc())  # 添加详细堆栈跟踪信息
+        logger.error("详细堆栈信息：\n%s", traceback.format_exc())
 
         return {"error": f"Data processing error: {str(e)}"}
 
@@ -37,34 +79,81 @@ def topic_extracotr(params):
     if "model_parameters" not in params:
         logger.info("未传入 model_parameters, 直接返回数据处理结果")
         return output
-    # 如果有 model_parameters，则继续调用模型
 
+    # 如果有 model_parameters，则继续调用模型
     model_name = params['model_parameters'].get("model_name", "glm-4-flash")
     prompt2_input = "\n".join(output)  # 这就是Prompt2的输入
+    logger.info("prompt2_input: %s", prompt2_input)
     params['model_parameters']['text'] = prompt2_input
     logger.info("prompt2调用模型的入参 params: %s", params)
 
-    model_api = ModelAPI(params.get("model_parameters", ""))
-    breakpoint_json = model_api.analyze_text()
-    logger.info(f"{model_name}模型分析的Prompt2的输出结果: %s", breakpoint_json)
-    # 这里的result只是将师生对话文本中”讲解“的分割点找到了，还需要写一个调用数据处理代码，通过分割点，把IRE,EIRE,IR,EIR片段找到，并输出。
+    # 调用模型 API 进行分析
+    try:
+        model_api = ModelAPI(params.get("model_parameters", ""))
+        breakpoint_json = model_api.analyze_text()
+        logger.info(f"{model_name}模型分析的Prompt2的输出结果: %s", breakpoint_json)
+    except Exception as e:
+        logger.info("尝试调用付费模型 gpt4o")
+        try:
+            prompt2 = params['model_parameters'].get('prompt', "")
+            params["model_parameters"] = ALTERNATE_MODEL_PARAMETERS
+            params["model_parameters"]["prompt"] = prompt2
+            params['model_parameters']['text'] = prompt2_input
+            logger.info("调用付费模型gpt4o的入参 params: %s", params)
+            model_api = ModelAPI(params.get("model_parameters", ""))
+            breakpoint_json = model_api.analyze_text()
+            logger.info("备用模型gpt4o 分析的Prompt2的输出结果: %s", breakpoint_json)
+        except Exception as fallback_e:
+            # 如果这个模型调用也失败，则返回错误信息
+            logger.error("备用模型gpt4o 调用失败: %s", fallback_e)
+            logger.error("详细堆栈信息：\n%s", traceback.format_exc())
+            return {"error": f"Fallback model API error: {str(fallback_e)}"}
+
+    # 处理模型返回的结果
+    splitpoint = extract_json_using_patterns(breakpoint_json)
+    if not splitpoint:
+        logger.error("无法从模型返回的结果中提取分割点")
+        return {"error": "Failed to extract split points from model output."}
+
+    # 继续处理
     processor2 = DataProcessor(
         prompt2_input=prompt2_input,
         task="topic_extraction",  # 选择新的任务类型
-        splitpoint=extract_json_using_patterns(breakpoint_json)
+        splitpoint=splitpoint
     )
-    prompt2_output = processor2.process_and_save_sub_dfs()  # 这里输出 的就是Prompt3的输入了
-    # 有了这prompt2_output，就可以送入到主题提取Prompt中了。
+    prompt2_output = processor2.process_and_save_sub_dfs()  # 这里输出的就是Prompt3的输入了
+
+    # 读取Prompt3的内容
     with open("prompt/prompt3主题提取.txt", "r", encoding="utf-8") as f:
         prompt3 = f.read()
     params['model_parameters']['text'] = prompt2_output
     params['model_parameters']['prompt'] = prompt3
 
     logger.info("prompt3调用模型的入参 params: %s", params)
-    model_api = ModelAPI(params.get("model_parameters", ""))
-    topic_content = model_api.analyze_text()
 
-    return topic_content
+    # 调用模型 API 进行主题提取
+    try:
+        model_api = ModelAPI(params.get("model_parameters", ""))
+        topic_content_raw = model_api.analyze_text()
+        logger.info(f"{model_name}模型分析的Prompt3的输出结果: %s", topic_content_raw)
+    except Exception as e:
+        logger.error("模型 API 调用错误: %s", e)
+        logger.error("详细堆栈信息：\n%s", traceback.format_exc())
+        return {"error": f"Model API error during prompt3 analysis: {str(e)}"}
+
+    # 解析模型返回的主题内容
+    topic_content = extract_json_using_patterns(topic_content_raw)
+    if not topic_content:
+        logger.error("无法从模型返回的结果中提取主题内容")
+        return {"error": "Failed to extract topic content from model output."}
+
+    # 把相同主题的子师生对话段合并起来
+    prompt3_input = prompt2_output.split('师生对话')[1:]
+    logger.info("prompt3_input: %s", prompt3_input)
+    logger.info("topic_content: %s", topic_content)
+    updated_topic_content = merge_texts_into_dict(prompt3_input, topic_content)
+
+    return updated_topic_content
 
 
 if __name__ == '__main__':
@@ -227,5 +316,6 @@ if __name__ == '__main__':
     }
 
     # 调用函数处理数据并分析
-    output_result = process_data_and_analyze(input_json)
+    output_result = topic_extract(input_json)
+
     print("最终输出结果:", output_result)

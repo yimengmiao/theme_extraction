@@ -108,7 +108,7 @@ class Prompt3inputProcessor:
             pieces.append(self.input1_list)
 
         # 合并相邻讲解内容
-        merged_pieces = [self.merge_explanations(piece) for piece in pieces]
+        merged_pieces = [self.merge_explanations(piece) for piece in pieces if piece]
 
         list_all = []
 
@@ -129,12 +129,12 @@ class Prompt3inputProcessor:
 
 # 示例调用
 if __name__ == '__main__':
-    prompt2_input = """发起：老师发起提问1老师讲解内容1老师发起提问2\n回应：学生回答1\n讲解：老师讲解内容2\n讲解：老师讲解内容3\n发起：老师发起提问3老师发起提问4\n回应：学生回答2\n讲解：老师讲解内容4\n讲解：老师讲解内容5"""
+    prompt2_input = """讲解：瞧那么一句话，就能把故事的意思讲出来了，\n发起：好，那我们来看看哦，他为什么什么树都没种成呢？\n回应：[空白]\n发起：我们来读课文的第一段，来，谁来读？\n回应：[空白]\n发起：嗯，好，你来读\n回应：猴子，种了一棵梨树苗天，天浇水施肥等着将来吃梨子，嗯，\n发起：你不要坐下，是不天天说明什么呀？\n回应：就是每天\n讲解：每天对呀，就说明这个猴子怎么样\n讲解：他每天都去浇，天天都去浇水，施肥\n发起：说明他怎么样\n回应：勤劳淡实，\n讲解：英语非常勤劳，\n讲解：猴子是不是很好，\n发起：你们看，\n回应：[空白]\n讲解：这个猴子种树啊，它有一个动作的过程，\n发起：你找到了动作的吗？它有哪些动作？\n回应：浇水\n发起：天气就直接浇水了吗？\n回应：[空白]\n讲解：所以先说重好的，\n发起：然后呢，\n回应：胶水\n讲解：嗯浇，嗯，施肥，"""
     splitpoint = {
-        "breakpoint": [
-            "讲解:老师讲解内容2",
-        ]
-    }
+  "breakpoint": [
+
+  ]
+}
 
     # 创建类的实例
     processor = Prompt3inputProcessor(prompt2_input, splitpoint)

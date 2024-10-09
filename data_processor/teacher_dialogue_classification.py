@@ -68,7 +68,7 @@ class TeacherDialogueClassificationProcessor:
 
     def split_dataset(self):
         """
-        按时间差和标签分割数据集
+        按相信老师的时间差T和老师学生标签分割数据集
         """
         df = self.dataset
 
@@ -189,9 +189,9 @@ class TeacherDialogueClassificationProcessor:
             # 丢弃第一个老师话语（label为0）之前的学生话语
             self.discard_student_before_first_teacher()
 
-            # 分割数据
+            # 分割数据集，这就是获取 prompt1输入前的第一步数据处理工作。
             sub_dfs = self.split_dataset()
-
+            # 下面这就是获取 prompt1输入前的第二步数据处理工作。按照 老师话语，学生话语这样的形式来作为prompt1的输入。
             json_list = []
             for sub_df in sub_dfs:
                 processed_sub_df = self.merge_text_by_label(sub_df)

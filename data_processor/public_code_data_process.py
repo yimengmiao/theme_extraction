@@ -72,3 +72,19 @@ def remove_punctuation(text):
     # 使用正则表达式去除标点
     text = re.sub(f"[{re.escape(punctuation)}]", '', text)
     return text
+
+if __name__ == '__main__':
+    text = """
+    
+    ```json
+{
+    "result": [
+        {"type": "发起", "content": "它分别种了什么树呢？谁来说说？"},
+        {"type": "发起", "content": "于凯，你来说说看。"},
+        {"type": "其它", "content": "你慢讲啊。"},
+        {"type": "其它", "content": "嗯。"},
+        {"type": "发起", "content": "然后呢？"}
+    ]
+}
+```"""
+    print(type(extract_json_using_patterns(text)))

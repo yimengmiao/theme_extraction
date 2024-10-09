@@ -224,4 +224,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-# 代码使用：python teacher_classification.py --data data/original_data/test.xlsx --config config/config.json --prompt prompt/teacher_dialouge_classification_prompt.txt --output output.xlsx
+# 代码使用：python teacher_classification.py --data data/original_data/test.xlsx --config config/config.json --prompt prompt/teacher_dialouge_classification_prompt1.txt --output output.xlsx
